@@ -18,12 +18,12 @@
                 <center><img src="assets/images/logo.svg" /></center>
                 <form id="account">
                     <div class="form-group">
-                        <input type="text" placeholder="Username" name="username" class="form-control">
+                        <input type="text" placeholder="Username" name="username" class="form-control" data-i18n="login.username">
                     </div>
                     <div class="form-group">
-                        <input type="password" placeholder="Password" name="password" class="form-control">
+                        <input type="password" placeholder="Password" name="password" class="form-control" data-i18n="login.password">
                     </div>
-                    <button type="submit" class="btn btn-block btn-default">Login</button>
+                    <button type="submit" class="btn btn-block btn-default" data-i18n="login.loginButton">Login</button>
                 </form>
             </div>
         </div>
@@ -35,7 +35,7 @@
                     <div class="button-list pull-left m-t-15 m-l-10">
                         <div class="btn-group p_one">
                             <button id="productModal" data-toggle="modal" data-target="#Products" type="button" class="btn btn-success waves-effect waves-light">
-                                <span class="btn-label"><i class="  glyphicon glyphicon-barcode"></i> </span> Products
+                                <span class="btn-label"><i class="  glyphicon glyphicon-barcode"></i> </span> <span data-i18n="navigation.products">Products</span>
                             </button>
                             <button id="newProductModal" data-toggle="modal" data-target="#newProduct" type="button" class="btn btn-warning waves-effect waves-light">
                                 <i class="fa fa-plus"></i>
@@ -43,17 +43,17 @@
                         </div>
                         <div class="btn-group p_two">
                             <button id="categoryModal" data-toggle="modal" data-target="#Categories" type="button" class="btn btn-success waves-effect waves-light">
-                                <span class="btn-label"><i class="glyphicon glyphicon-th"></i> </span> Categories
+                                <span class="btn-label"><i class="glyphicon glyphicon-th"></i> </span> <span data-i18n="navigation.categories">Categories</span>
                             </button>
                             <button id="newCategoryModal" data-toggle="modal" data-target="#newCategory" type="button" class="btn btn-warning waves-effect waves-light">
                                 <i class="fa fa-plus"></i>
                             </button>
                         </div>
                         <button id="viewRefOrders" data-toggle="modal" data-target="#holdOrdersModal" type="button" class="btn btn-info waves-effect waves-light">
-                            <span class="btn-label"><i class="fa fa-shopping-basket"></i> </span> Open Tabs
+                            <span class="btn-label"><i class="fa fa-shopping-basket"></i> </span> <span data-i18n="navigation.openTabs">Open Tabs</span>
                         </button>
                         <button id="viewCustomerOrders" data-toggle="modal" data-target="#customerModal" type="button" onclick="$(this).getCustomerOrders()" class="btn btn-info waves-effect waves-light">
-                            <span class="btn-label"><i class="fa fa-shopping-cart"></i></span> Orders
+                            <span class="btn-label"><i class="fa fa-shopping-cart"></i></span> <span data-i18n="navigation.orders">Orders</span>
                         </button>
                     </div>
                 </div>
@@ -64,15 +64,14 @@
                         </button>
                         <button id="transactions" type="button" class="btn btn-success waves-effect waves-light p_three">
                             <span class="btn-label"><i class="  glyphicon glyphicon-credit-card"></i> </span>
-                            Transactions
+                            <span data-i18n="navigation.transactions">Transactions</span>
                         </button>
                         <button id="pointofsale" type="button" class="btn btn-success waves-effect waves-light">
-                            <span class="btn-label"><i class="  glyphicon glyphicon-shopping-cart"></i> </span> Point of
-                            Sale
+                            <span class="btn-label"><i class="  glyphicon glyphicon-shopping-cart"></i> </span> <span data-i18n="navigation.pointOfSale">Point of Sale</span>
                         </button>
                         <div class="btn-group p_four">
                             <button id="usersModal" data-toggle="modal" data-target="#Users" type="button" class="btn btn-success waves-effect waves-light">
-                                <span class="btn-label"><i class="  glyphicon glyphicon-user"></i> </span> Users
+                                <span class="btn-label"><i class="  glyphicon glyphicon-user"></i> </span> <span data-i18n="navigation.users">Users</span>
                             </button>
                             <button id="add-user" data-toggle="modal" type="button" class="btn btn-warning waves-effect waves-light">
                                 <i class="fa fa-plus"></i>
@@ -82,7 +81,14 @@
                             <span class="btn-label"><i class="glyphicon glyphicon-user"></i> </span> <span id="loggedin-user"></span>
                         </button>
                         <button id="log-out" type="button" class="btn btn-warning waves-effect waves-light">
-                            <i class="glyphicon glyphicon-log-out"></i> <span>Log out</span>
+                            <i class="glyphicon glyphicon-log-out"></i> <span data-i18n="navigation.logout">Log out</span>
+                        </button>
+                        <!-- Test language switching buttons -->
+                        <button onclick="testLanguageChange('en')" type="button" class="btn btn-info waves-effect waves-light">
+                            EN
+                        </button>
+                        <button onclick="testLanguageChange('si')" type="button" class="btn btn-info waves-effect waves-light">
+                            සිං
                         </button>
                     </div>
                 </div>
@@ -91,19 +97,19 @@
                 <div class="container">
                     <div class="row text-center m-t-20" id="totals">
                         <div id="total_sales" class="col-md-3 py-2 bg-success">
-                            <h5>SALES</h5>
+                            <h5 data-i18n="transactions.sales">SALES</h5>
                             <span id="counter">0</span>
                         </div>
                         <div id="total_transactions" class="col-md-3 py-2 bg-warning">
-                            <h5>TRANSACTIONS</h5>
+                            <h5 data-i18n="transactions.transactions">TRANSACTIONS</h5>
                             <span id="counter">0</span>
                         </div>
                         <div id="total_items" class="col-md-3 py-2 bg-info">
-                            <h5>ITEMS SOLD</h5>
+                            <h5 data-i18n="transactions.itemsSold">ITEMS SOLD</h5>
                             <span id="counter">0</span>
                         </div>
                         <div id="total_products" class="col-md-3 py-2 bg-success">
-                            <h5>PRODUCTS</h5>
+                            <h5 data-i18n="products.title">PRODUCTS</h5>
                             <span id="counter">0</span>
                         </div>
                     </div>
@@ -199,7 +205,7 @@
                                 <div class="row">
                                     <div class="col-md-10">
                                         <div class="input-group">
-                                            <select name="" id="customer" class="form-control">
+                                            <select name="" id="customer" class="form-control" data-i18n="pos.customer">
                                             </select>
                                             <span class="input-group-btn">
                                                 <button id="newCustomerModal" data-toggle="modal" data-target="#newCustomer" class="btn btn-success"><i class="fa fa-plus"></i></button>
@@ -209,7 +215,7 @@
                                     <div class="col-md-10 m-t-5">
                                         <form action="" id="searchBarCode">
                                             <div class="input-group">
-                                                <input type="text" required id="skuCode" name="skuCode" class="form-control number-input" placeholder="Scan barcode or type the number then hit enter" aria-label="barcode" aria-describedby="basic-addon2">
+                                                <input type="text" required id="skuCode" name="skuCode" class="form-control number-input" placeholder="Scan barcode or type the number then hit enter" aria-label="barcode" aria-describedby="basic-addon2" data-i18n="pos.barcodePlaceholder">
                                                 <span class="input-group-btn">
                                                     <button type="submit" class="btn btn-default search-barcode-btn"><i class="glyphicon glyphicon-ok"></i></button>
                                                 </span>
@@ -221,10 +227,10 @@
                                     <div class="card-box">
                                         <div class="card-title">
                                             <div class="row">
-                                                <div class="col-md-1"><strong>#</strong></div>
-                                                <div class="col-md-3"><strong>Item</strong></div>
-                                                <div class="col-md-3"><strong>Qty</strong></div>
-                                                <div class="col-md-3"><strong>Price</strong></div>
+                                            <div class="col-md-1"><strong data-i18n="common.name">#</strong></div>
+                                            <div class="col-md-3"><strong data-i18n="pos.item">Item</strong></div>
+                                            <div class="col-md-3"><strong data-i18n="pos.qty">Qty</strong></div>
+                                            <div class="col-md-3"><strong data-i18n="pos.price">Price</strong></div>
                                                 <div class="col-md-1"><button onclick="$(this).cancelOrder()" class="btn btn-light btn-xs"><i class="fa fa-times"></i></button>
                                                 </div>
                                             </div>
@@ -236,16 +242,16 @@
                             <hr>
                             <div class="m-t-5">
                                 <div class="row">
-                                    <div class="col-md-3">Total Item(s)</div>
+                                    <div class="col-md-3" data-i18n="pos.totalItems">Total Item(s)</div>
                                     <div class="col-md-3">: <span id="total">0</span>
                                     </div>
-                                    <div class="col-md-3">Price :</div>
+                                    <div class="col-md-3" data-i18n="pos.price">Price :</div>
                                     <div class="col-md-3">: <span id="price">0.0</span></div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-3">Discount</div>
-                                    <div class="col-md-3"><input class="form-control" type="number" id="inputDiscount" minimum="0" placeholder="amount" oninput="$(this).calculateCart();"></div>
-                                    <div class="col-md-3">Gross Price (inc <span id="taxInfo"></span>% Tax)</div>
+                                    <div class="col-md-3" data-i18n="pos.discount">Discount</div>
+                                    <div class="col-md-3"><input class="form-control" type="number" id="inputDiscount" minimum="0" placeholder="amount" oninput="$(this).calculateCart();" data-i18n="pos.amount"></div>
+                                    <div class="col-md-3" data-i18n="pos.grossPrice">Gross Price (inc <span id="taxInfo"></span>% Tax)</div>
                                     <div class="col-md-3">
                                         <h3 id="gross_price">0.00</h3>
                                     </div>
@@ -256,13 +262,13 @@
                                     <i class="fa fa-print"></i>
                                 </button>
                                 <button onclick="$(this).cancelOrder()" type="button" class="btn btn-danger waves-effect waves-light">
-                                    <span class="btn-label"><i class="fa fa-ban"></i></span>Cancel
+                                    <span class="btn-label"><i class="fa fa-ban"></i></span><span data-i18n="pos.cancelOrder">Cancel</span>
                                 </button>
                                 <button type="button" id="hold" class="btn btn-info waves-effect waves-light">
-                                    <span class="btn-label"><i class="fa fa-hand-paper-o"></i></span>Hold
+                                    <span class="btn-label"><i class="fa fa-hand-paper-o"></i></span><span data-i18n="pos.hold">Hold</span>
                                 </button>
                                 <button type="button" id="payButton" class="btn btn-success waves-effect waves-light">
-                                    <span class="btn-label"><i class="fa fa-money"></i></span>Pay
+                                    <span class="btn-label"><i class="fa fa-money"></i></span><span data-i18n="pos.pay">Pay</span>
                                 </button>
                             </div>
                             <hr>
@@ -272,10 +278,10 @@
                         <div class="card-box">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <input type="text" id="search" class="form-control" placeholder="Search product by name or sku">
+                                    <input type="text" id="search" class="form-control" placeholder="Search product by name or sku" data-i18n="pos.searchProduct">
                                 </div>
                                 <div class="col-md-6">
-                                    <select id="categories" class="form-control">
+                                    <select id="categories" class="form-control" data-i18n="pos.selectCategory">
                                     </select>
                                 </div>
                             </div>
@@ -851,10 +857,10 @@
                                             Max filesize: <strong>2MB</strong>; Allowed image types:<strong> jpeg, jpg, png or webp</strong></small>
 
                                         </div>
-                                        <div class="form-group">
-                                            <label for="userName">Receipt Footer</label>
-                                            <textarea name="footer" class="form-control" id="footer"></textarea>
-                                        </div>
+                        <div class="form-group">
+                            <label for="userName">Receipt Footer</label>
+                            <textarea name="footer" class="form-control" id="footer"></textarea>
+                        </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -869,6 +875,87 @@
         </div>
     </div>
     <script src="assets/dist/js/bundle.min.js"></script>
+    <!-- Load simple i18n implementation -->
+    <script src="assets/js/simple-i18n.js"></script>
+    <script>
+        // Debug script to check i18n status
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, checking i18n status...');
+            
+            setTimeout(function() {
+                console.log('i18next available:', typeof window.i18next !== 'undefined');
+                console.log('i18nUtils available:', typeof window.i18nUtils !== 'undefined');
+                console.log('changeLanguage available:', typeof window.changeLanguage !== 'undefined');
+                console.log('Current language:', window.i18nUtils ? window.i18nUtils.getCurrentLanguage() : 'unknown');
+                
+                // Test basic translation
+                if (window.i18nUtils) {
+                    console.log('Test translation:', window.i18nUtils.t('common.welcome'));
+                }
+                
+                // Check if language selector exists
+                const langSelector = document.getElementById('language');
+                console.log('Language selector found:', !!langSelector);
+                
+                if (langSelector) {
+                    console.log('Language selector value:', langSelector.value);
+                }
+                
+                // Test the changeLanguage function directly
+                if (typeof window.changeLanguage === 'function') {
+                    console.log('✓ changeLanguage function is available');
+                } else {
+                    console.error('✗ changeLanguage function is NOT available');
+                }
+            }, 2000);
+        });
+        
+        // Test functions for buttons
+        function testLanguageChange(lng) {
+            console.log('=== Testing Language Change to', lng, '===');
+            console.log('changeLanguage available:', typeof window.changeLanguage !== 'undefined');
+            console.log('i18next available:', typeof window.i18next !== 'undefined');
+            console.log('i18next initialized:', window.i18next ? window.i18next.isInitialized : 'N/A');
+            
+            if (window.changeLanguage) {
+                window.changeLanguage(lng);
+            } else {
+                console.error('changeLanguage function not available');
+            }
+        }
+        
+        function debugI18n() {
+            console.log('=== i18n Debug Information ===');
+            console.log('1. changeLanguage available:', typeof window.changeLanguage !== 'undefined');
+            console.log('2. t function available:', typeof window.t !== 'undefined');
+            console.log('3. i18nUtils available:', typeof window.i18nUtils !== 'undefined');
+            console.log('4. Current language:', window.i18nUtils ? window.i18nUtils.getCurrentLanguage() : 'N/A');
+            
+            // Check DOM elements
+            const elements = document.querySelectorAll('[data-i18n]');
+            console.log('5. Elements with data-i18n:', elements.length);
+            
+            elements.forEach((el, index) => {
+                if (index < 10) { // Show first 10
+                    const key = el.getAttribute('data-i18n');
+                    const text = el.textContent;
+                    console.log(`   Element ${index + 1}: "${key}" -> "${text}"`);
+                }
+            });
+            
+            // Test translations if available
+            if (window.t) {
+                console.log('6. English welcome:', window.t('common.welcome', 'en'));
+                console.log('7. Sinhala welcome:', window.t('common.welcome', 'si'));
+                console.log('8. English products:', window.t('navigation.products', 'en'));
+                console.log('9. Sinhala products:', window.t('navigation.products', 'si'));
+            } else {
+                console.log('6-9. Translation function not available');
+            }
+            
+            console.log('=== Debug Complete ===');
+        }
+    </script>
 </body>
 
 </html>

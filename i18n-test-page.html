@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>i18n Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { margin: 10px; padding: 10px; }
+        .test-element { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>i18n Test Page</h1>
+    
+    <div>
+        <h2>Test Elements</h2>
+        <div class="test-element" data-i18n="common.welcome">Welcome</div>
+        <div class="test-element" data-i18n="navigation.products">Products</div>
+        <div class="test-element" data-i18n="navigation.categories">Categories</div>
+        <div class="test-element" data-i18n="pos.pay">Pay</div>
+        <div class="test-element" data-i18n="pos.hold">Hold</div>
+    </div>
+    
+    <div>
+        <h2>Test Buttons</h2>
+        <button onclick="testChangeLanguage('en')">English</button>
+        <button onclick="testChangeLanguage('si')">සිංහල</button>
+        <!-- <button onclick="runDebugScript()">Debug</button> -->
+    </div>
+    
+    <div>
+        <h2>Console Output</h2>
+        <div id="console-output" style="background: #f0f0f0; padding: 10px; height: 200px; overflow-y: scroll;"></div>
+    </div>
+    
+    <script>
+        // Override console.log to show in the page
+        const originalLog = console.log;
+        const consoleOutput = document.getElementById('console-output');
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            consoleOutput.innerHTML += args.join(' ') + '<br>';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        // Test function
+        function testChangeLanguage(lng) {
+            console.log('Testing language change to:', lng);
+            if (window.changeLanguage) {
+                window.changeLanguage(lng);
+            } else {
+                console.log('changeLanguage function not available');
+            }
+        }
+        
+        function runDebugScript() {
+            console.log('=== Running Debug Script ===');
+            
+            // Check if i18next is available
+            console.log('i18next available:', typeof window.i18next !== 'undefined');
+            console.log('i18next initialized:', window.i18next ? window.i18next.isInitialized : 'N/A');
+            console.log('Current language:', window.i18next ? window.i18next.language : 'N/A');
+            
+            // Check if our functions are available
+            console.log('changeLanguage available:', typeof window.changeLanguage !== 'undefined');
+            console.log('i18nUtils available:', typeof window.i18nUtils !== 'undefined');
+            
+            // Check DOM elements
+            const elements = document.querySelectorAll('[data-i18n]');
+            console.log('Elements with data-i18n:', elements.length);
+            
+            elements.forEach((el, index) => {
+                const key = el.getAttribute('data-i18n');
+                const text = el.textContent;
+                console.log(`Element ${index + 1}: "${key}" -> "${text}"`);
+            });
+            
+            console.log('=== Debug Complete ===');
+        }
+        
+        // Run debug on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, running initial debug...');
+            setTimeout(runDebugScript, 1000);
+        });
+    </script>
+    
+    <!-- Load the i18n script -->
+    <script src="assets/js/i18n.js"></script>
+</body>
+</html>

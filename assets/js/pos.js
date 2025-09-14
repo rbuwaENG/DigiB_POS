@@ -811,7 +811,7 @@ if (auth == undefined) {
             Order No : ${orderNumber} <br>
             Ref No : ${refNumber == "" ? orderNumber : _.escape(refNumber)} <br>
             Customer : ${
-              customer == 0 ? "Walk in customer" : _.escape(customer.name)
+              customer == 0 || !customer ? "Walk in customer" : _.escape(customer.name)
             } <br>
             Cashier : ${user.fullname} <br>
             Date : ${date}<br>
@@ -985,7 +985,7 @@ if (auth == undefined) {
                   $("<b>", { text: "Customer :" }),
                   $("<span>", {
                     text:
-                      order.customer != 0
+                      order.customer != 0 && order.customer
                         ? order.customer.name
                         : "Walk in customer",
                     class: "customer_name",
@@ -1054,7 +1054,7 @@ if (auth == undefined) {
 
         $("#customer option")
           .filter(function () {
-            return $(this).text() == customerOrderList[index].customer.name;
+            return customerOrderList[index].customer && $(this).text() == customerOrderList[index].customer.name;
           })
           .prop("selected", true);
 
@@ -2244,7 +2244,7 @@ $.fn.viewTransaction = function (index) {
         Invoice : ${orderNumber} <br>
         Ref No : ${refNumber} <br>
         Customer : ${
-          allTransactions[index].customer == 0
+          allTransactions[index].customer == 0 || !allTransactions[index].customer
             ? "Walk in Customer"
             : allTransactions[index].customer.name
         } <br>
