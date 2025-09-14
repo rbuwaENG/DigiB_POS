@@ -1187,6 +1187,78 @@ if (auth == undefined) {
       });
     });
 
+  /**
+ * Supplier Form Submission
+ */
+$("#saveSupplier").on("submit", function(e) {
+  e.preventDefault();
+  
+  // Get form data
+  let formData = {
+      id: $("#supplier_id").val(),
+      supplierName: $("#supplierName").val(),
+      contactInfo: $("#contactInfo").val(),
+      email: $("#email").val(),
+      address: $("#address").val(),
+      goodsSupplied: $("#goodsSupplied").val(),
+      paymentTerms: $("#paymentTerms").val(),
+      paymentDueDate: $("#paymentDueDate").val(),
+      paymentStatus: $("#paymentStatus").val(),
+      paymentAmount: $("#paymentAmount").val()
+  };
+  
+  // Log data to console as requested
+  console.log("Supplier Form Data:", formData);
+  
+  // Send AJAX request
+  $.ajax({
+      url: api + "supplier",
+      type: "POST",
+      data: JSON.stringify(formData),
+      contentType: "application/json; charset=utf-8",
+      cache: false,
+      processData: false,
+      success: function(response) {
+          console.log("Supplier saved successfully:", response);
+          
+          // Show success message
+          notiflix.Report.success(
+              "Success!",
+              "Supplier saved successfully!",
+              "Ok"
+          );
+          
+          // Close modal
+          $("#newSupplier").modal("hide");
+          
+          // Reset form
+          $("#saveSupplier")[0].reset();
+          
+          // Clear hidden ID field
+          $("#supplier_id").val("");
+          
+          // Refresh supplier list if needed
+          // $(this).loadSuppliers();
+      },
+      error: function(xhr, status, error) {
+          console.error("Error saving supplier:", error);
+          
+          // Show error message
+          notiflix.Report.failure(
+              "Error",
+              "Failed to save supplier: " + error,
+              "Ok"
+          );
+      }
+  });
+});
+
+// Clear form when modal is closed
+$("#newSupplier").on("hidden.bs.modal", function() {
+  $("#saveSupplier")[0].reset();
+  $("#supplier_id").val("");
+});
+
     $("#confirmPayment").hide();
 
     $("#cardInfo").hide();
