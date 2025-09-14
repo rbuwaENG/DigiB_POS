@@ -722,12 +722,12 @@
                 </div>
             </div>
         </div>
-        <div id="customerModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        <!-- <div id="customerModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                        <h4 class="modal-title" id="myLargeModalLabel">Customer Orders</h4>
+                        <h4 class="modal-title" id="myLargeModalLabel">Suppliers</h4>
                     </div>
                     <div class="modal-body">
                         <input type="text" id="holdCustomerOrderInput" placeholder="Search order by customer name" class="holdCustomerOrderInput form-control">
@@ -739,7 +739,113 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
+
+        <div id="customerModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+          
+                <!-- Header -->
+                <div class="modal-header">
+                  <h4 class="modal-title" id="myLargeModalLabel">Suppliers</h4>
+                  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                </div>
+          
+                <!-- Body -->
+                <div class="modal-body">
+          
+                  <!-- Summary Boxes -->
+                  <div class="row text-center mb-3">
+                    <div class="col-md-3">
+                      <div class="card border-primary">
+                        <div class="card-body text-primary">
+                          <i class="fa fa-users"></i>
+                          <h4 id="totalSuppliers">1</h4>
+                          <p>Total Suppliers</p>
+                          <small>Active Suppliers</small>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="card border-warning">
+                        <div class="card-body text-warning">
+                          <i class="fa fa-clock"></i>
+                          <h4 id="pendingPayments">0</h4>
+                          <p>Pending Payments</p>
+                          <small>Amount: 0</small>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="card border-info">
+                        <div class="card-body text-info">
+                          <i class="fa fa-money-bill"></i>
+                          <h4 id="partiallyPaid">0</h4>
+                          <p>Partially Paid</p>
+                          <small>Amount: 0</small>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="card border-success">
+                        <div class="card-body text-success">
+                          <i class="fa fa-check"></i>
+                          <h4 id="fullyPaid">1</h4>
+                          <p>Fully Paid</p>
+                          <small>Amount: 25,000</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+          
+                  <!-- Search + Buttons -->
+                  <div class="d-flex justify-content-between mb-3">
+                    <input type="text" id="holdCustomerOrderInput" placeholder="Search suppliers..." class="form-control w-50">
+                    <div>
+                      <button class="btn btn-success"><i class="fa fa-download"></i> Download</button>
+                      <button class="btn btn-info"><i class="fa fa-sync"></i> Refresh</button>
+                    </div>
+                  </div>
+          
+                  <!-- Suppliers Table -->
+                  <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Name</th>
+                          <th>Contact</th>
+                          <th>Email</th>
+                          <th>Payment Terms</th>
+                          <th>Due Date</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="renderCustomerOrders">
+                        <tr>
+                          <td>1</td>
+                          <td>Ravindu</td>
+                          <td>0782532299</td>
+                          <td>N/A</td>
+                          <td>Cash</td>
+                          <td>18/09/2025</td>
+                          <td><span class="badge badge-success">Paid</span></td>
+                          <td>
+                            <button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button>
+                            <button class="btn btn-sm btn-warning"><i class="fa fa-money-bill"></i></button>
+                            <button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+          
+                </div>
+              </div>
+            </div>
+          </div>
+          
         <div id="orderModal" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-sm">
                 <div class="modal-content">
