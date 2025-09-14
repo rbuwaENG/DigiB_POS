@@ -5,6 +5,192 @@
     <meta charset="UTF-8">
     <title></title>
     <link href="assets/dist/css/bundle.min.css" rel="stylesheet" type="text/css" />
+    <style>
+        /* Enhanced Supplier Modal Styling */
+        #newSupplier .modal-content {
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+            border: none;
+        }
+        
+        #newSupplier .modal-header {
+            background: linear-gradient(135deg, #83e6f7 0%, #182848 100%);
+            color: white;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            padding: 15px 20px;
+        }
+        
+        #newSupplier .modal-title {
+            font-weight: 600;
+            font-size: 1.4rem;
+        }
+        
+        #newSupplier .close {
+            color: white;
+            opacity: 0.8;
+            text-shadow: none;
+            font-size: 1.5rem;
+        }
+        
+        #newSupplier .close:hover {
+            opacity: 1;
+        }
+        
+        #newSupplier .modal-body {
+            padding: 25px;
+            background-color: #f8f9fa;
+        }
+        
+        #saveSupplier .form-group {
+            margin-bottom: 1.2rem;
+            position: relative;
+        }
+        
+        #saveSupplier label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        #saveSupplier .required {
+            color: #dc3545;
+        }
+        
+        #saveSupplier .form-control {
+            border-radius: 6px;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+        
+        #saveSupplier .form-control:focus {
+            border-color: #4b6cb7;
+            box-shadow: 0 0 0 0.2rem rgba(75, 108, 183, 0.25);
+        }
+        
+        #saveSupplier textarea.form-control {
+            min-height: 90px;
+            resize: vertical;
+        }
+        
+        #saveSupplier select.form-control {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23343a40' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+        
+        #saveSupplier .input-group {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        #saveSupplier .input-group-addon {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #e9ecef;
+            padding: 15px 25px 25px;
+            background-color: #f8f9fa;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        
+        #submitSupplier {
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            border: none;
+            padding: 10px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            min-width: 120px;
+        }
+        
+        #submitSupplier:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, #182848 0%, #4b6cb7 100%);
+        }
+        
+        .btn-secondary {
+            border-radius: 6px;
+            padding: 10px 25px;
+            font-weight: 600;
+            min-width: 120px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Button to open modal */
+        .btn-primary.btn-lg {
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary.btn-lg:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, #182848 0%, #4b6cb7 100%);
+        }
+        
+        /* Form section styling */
+        .form-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #4b6cb7;
+        }
+        
+        .form-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4b6cb7;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #newSupplier .modal-dialog {
+                margin: 20px 10px;
+            }
+            
+            #newSupplier .modal-body {
+                padding: 15px;
+            }
+            
+            .modal-footer {
+                padding: 15px;
+            }
+            
+            .btn-secondary, #submitSupplier {
+                min-width: 100px;
+                padding: 8px 15px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -52,9 +238,14 @@
                         <button id="viewRefOrders" data-toggle="modal" data-target="#holdOrdersModal" type="button" class="btn btn-info waves-effect waves-light">
                             <span class="btn-label"><i class="fa fa-shopping-basket"></i> </span> Open Tabs
                         </button>
-                        <button id="viewCustomerOrders" data-toggle="modal" data-target="#customerModal" type="button" onclick="$(this).getCustomerOrders()" class="btn btn-info waves-effect waves-light">
-                            <span class="btn-label"><i class="fa fa-shopping-cart"></i></span> Orders
-                        </button>
+                        <div class="btn-group p_four">
+                            <button id="viewCustomerOrders" data-toggle="modal" data-target="#customerModal" type="button" onclick="$(this).getCustomerOrders()" class="btn btn-info waves-effect waves-light">
+                                <span class="btn-label"><i class="fa fa-truck"></i></span> Suppliers
+                            </button>
+                            <button id="newSupplierModal" data-toggle="modal" data-target="#newSupplier" type="button" class="btn btn-warning waves-effect waves-light">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -552,6 +743,112 @@
                 </div>
             </div>
         </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <!-- Supplier Modal -->
+                <div id="newSupplier" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="supplierModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h4 class="modal-title" id="supplierModalLabel">Add New Supplier</h4>
+                                <button type="button" class="close text-white" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="saveSupplier" enctype="multipart/form-data">
+                                    <input type="hidden" name="id" id="supplier_id">
+                                    <input type="hidden" name="existing_img" id="existing_img">
+                                    <input type="hidden" name="remove_img" id="remove_img">
+                                    
+                                    <div class="form-section">
+                                        <div class="form-section-title">Basic Information</div>
+                                        <div class="form-group">
+                                            <label for="supplierName">Supplier Name <span class="required">*</span></label>
+                                            <input type="text" required="required" name="supplierName" placeholder="Enter supplier name" class="form-control" id="supplierName">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="contactInfo">Contact Information <span class="required">*</span></label>
+                                            <input type="text" required="required" name="contactInfo" placeholder="Enter contact number" class="form-control" id="contactInfo">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="email">Email</label>
+                                            <input type="email" name="email" placeholder="Enter email address" class="form-control" id="email">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="address">Address</label>
+                                            <textarea name="address" placeholder="Enter supplier address" class="form-control" id="address" rows="3"></textarea>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-section">
+                                        <div class="form-section-title">Supply Details</div>
+                                        <div class="form-group">
+                                            <label for="goodsSupplied">Goods/Items Supplied</label>
+                                            <textarea name="goodsSupplied" placeholder="Description of goods or items supplied" class="form-control" id="goodsSupplied" rows="3"></textarea>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-section">
+                                        <div class="form-section-title">Payment Information</div>
+                                        <div class="form-group">
+                                            <label for="paymentTerms">Payment Terms <span class="required">*</span></label>
+                                            <select name="paymentTerms" class="form-control" id="paymentTerms" required>
+                                                <option value="">Select Payment Terms</option>
+                                                <option value="cash">Cash</option>
+                                                <option value="credit_7">7 Days Credit</option>
+                                                <option value="credit_15">15 Days Credit</option>
+                                                <option value="credit_30">30 Days Credit</option>
+                                                <option value="credit_60">60 Days Credit</option>
+                                                <option value="credit_90">90 Days Credit</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="paymentDueDate">Payment Due Date</label>
+                                            <input type="date" name="paymentDueDate" class="form-control" id="paymentDueDate">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="paymentStatus">Payment Status</label>
+                                            <select name="paymentStatus" class="form-control" id="paymentStatus">
+                                                <option value="pending">Pending</option>
+                                                <option value="paid">Paid</option>
+                                                <option value="overdue">Overdue</option>
+                                                <option value="partial">Partial</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="paymentAmount">Payment Amount</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">$</span>
+                                                <input type="number" name="paymentAmount" placeholder="Enter amount" class="form-control" id="paymentAmount" step="0.01" min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                                                     
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        <button type="submit" id="submitSupplier" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Submit
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Button to open modal -->
+                <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#newSupplier">
+                    <i class="fas fa-plus"></i> Add New Supplier
+                </button>
+            </div>
+        </div>
+
         <div id="newCategory" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-md">
                 <div class="modal-content">
