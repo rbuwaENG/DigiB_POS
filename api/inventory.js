@@ -164,7 +164,9 @@ app.post("/product", function (req, res) {
         price: validator.escape(req.body.price),
         market_price: validator.escape(req.body.market_price || ''),
         our_price: validator.escape(req.body.our_price || ''),
+        buying_price: validator.escape(req.body.buying_price || ''),
         benefit: validator.escape(req.body.benefit || ''),
+        profit: validator.escape(req.body.profit || ''),
         category: validator.escape(req.body.category),
         quantity:
             validator.escape(req.body.quantity) == ""

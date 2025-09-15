@@ -509,7 +509,7 @@
             </div>
         </div>
         <div id="newProduct" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-sm">
+            <div class="modal-dialog modal-md">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
@@ -544,8 +544,22 @@
                                 <input type="text" name="our_price" placeholder="Our Price" class="form-control number-input" id="product_our_price">
                             </div>
                             <div class="form-group">
+                                <label for="product_price" data-i18n="products.price">Price</label>
+                                <small id="unit_note_price" class="text-muted" style="margin-left:6px;">per pcs</small>
+                                <input type="text" name="price" placeholder="Price" class="form-control number-input" id="product_price" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="product_buying_price" data-i18n="products.buyingPrice">Buying Price</label>
+                                <small id="unit_note_buying" class="text-muted" style="margin-left:6px;">per pcs</small>
+                                <input type="text" name="buying_price" placeholder="Buying Price" class="form-control number-input" id="product_buying_price">
+                            </div>
+                            <div class="form-group">
                                 <label for="product_benefit" data-i18n="products.benefit">Benefit</label>
                                 <input type="text" name="benefit" placeholder="Benefit" class="form-control" id="product_benefit" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="product_profit" data-i18n="products.profit">Profit</label>
+                                <input type="text" name="profit" placeholder="Profit" class="form-control" id="product_profit" readonly>
                             </div>
                            
                             <div class="form-group">
@@ -623,6 +637,8 @@
                                     <th>Item</th>
                                     <th>Name</th>
                                     <th>Price</th>
+                                    <th>Buying Price</th>
+                                    <th>Profit</th>
                                     <th>Stock</th>
                                     <th>Expiry Date</th>
                                     <th>Category</th>
@@ -733,6 +749,8 @@
                                 </div>
                                 <div class="form-group">
                                     <span><input type="checkbox" name="perm_suppliers" id="perm_suppliers"> Manage Suppliers </span>
+                                </div>
+                                <div class="form-group">
                                 </div>
                             </div>
                             <input type="submit" class="btn btn-primary btn-block waves-effect waves-light">

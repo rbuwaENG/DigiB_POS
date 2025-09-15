@@ -89,14 +89,14 @@ let by_till = 0;
 let by_user = 0;
 let by_status = 1;
 const default_item_img = path.join("assets","images","default.jpg");
-const permissions = [
-  "perm_products",
-  "perm_categories",
-  "perm_transactions",
-  "perm_users",
-  "perm_settings",
-  "perm_suppliers",
-];
+  const permissions = [
+    "perm_products",
+    "perm_categories",
+    "perm_transactions",
+    "perm_users",
+    "perm_settings",
+    "perm_suppliers",
+  ];
 notiflix.Notify.init({
   position: "right-top",
   cssAnimationDuration: 600,
@@ -283,9 +283,9 @@ if (auth == undefined) {
     if (0 == user.perm_settings) {
       $(".p_five").hide();
     }
-    if (0 == user.perm_suppliers) {
-      $(".p_six").hide();
-    }
+      if (0 == user.perm_suppliers) {
+        $(".p_six").hide();
+      }
 
     function loadProducts() {
       $.get(api + "inventory/products", function (data) {
@@ -984,7 +984,7 @@ if (auth == undefined) {
 
             <br>
             <p style="text-align: center;">
-             ${validator.unescape(settings.footer)}
+             ${validator.unescape(settings.footer)}<br>
               Designed by DigiB POS<br>
               Contact: 0707209768
              </p>
@@ -1334,6 +1334,11 @@ if (auth == undefined) {
       $(this).calculateChange();
     });
     $("#confirmPayment").on("click", function () {
+      // Only validate if the payment modal is actually visible
+      if (!$("#paymentModel").is(':visible')) {
+        return; // Exit silently if modal is not visible
+      }
+      
       if ($("#payment").val() == "") {
         notiflix.Report.warning(
           "Nope!",
@@ -1361,6 +1366,7 @@ if (auth == undefined) {
       $("#transactions_view").hide();
       $(this).hide();
     });
+
 
     $("#viewRefOrders").on("click", function () {
       setTimeout(function () {
@@ -1905,18 +1911,33 @@ if (auth == undefined) {
       $(this).attr("action", api + "inventory/product");
       $(this).attr("method", "POST");
 
-      // auto-calc price and benefit before submit
-      const market = parseFloat($("#product_market_price").val()||0);
-      const our = parseFloat($("#product_our_price").val()||0);
-      if (!isNaN(our) && our>0) {
-        $("#product_our_price").val(our.toFixed(2));
-      }
-      if (!isNaN(market) && !isNaN(our)) {
-        $("#product_benefit").val((market-our).toFixed(2));
-      }
+        // auto-calc price, benefit, and profit before submit
+        const market = parseFloat($("#product_market_price").val()||0);
+        const our = parseFloat($("#product_our_price").val()||0);
+        const buying = parseFloat($("#product_buying_price").val()||0);
+        
+        if (!isNaN(our) && our>0) {
+          $("#product_our_price").val(our.toFixed(2));
+          // Auto-populate price field with our price
+          $("#product_price").val(our.toFixed(2));
+        }
+        
+        // Ensure buying price is properly formatted
+        if (!isNaN(buying) && buying>=0) {
+          $("#product_buying_price").val(buying.toFixed(2));
+        } else {
+          $("#product_buying_price").val("0.00");
+        }
+        
+        if (!isNaN(market) && !isNaN(our)) {
+          $("#product_benefit").val((market-our).toFixed(2));
+        }
+        
+        if (!isNaN(our) && !isNaN(buying)) {
+          $("#product_profit").val((our-buying).toFixed(2));
+        }
 
       $(this).ajaxSubmit({
-        contentType: "application/json",
         success: function (response) {
           $("#saveProduct").get(0).reset();
           $("#current_img").text("");
@@ -2005,7 +2026,22 @@ if (auth == undefined) {
       $("#product_price").val(allProducts[index].price);
       $("#product_market_price").val(allProducts[index].market_price || '');
       $("#product_our_price").val(allProducts[index].our_price || '');
+      $("#product_buying_price").val(allProducts[index].buying_price || '');
       $("#product_benefit").val(allProducts[index].benefit || '');
+      $("#product_profit").val(allProducts[index].profit || '');
+      
+      // Auto-calculate profit when editing
+      const ourPrice = parseFloat(allProducts[index].our_price || 0);
+      const buyingPrice = parseFloat(allProducts[index].buying_price || 0);
+      const marketPrice = parseFloat(allProducts[index].market_price || 0);
+      
+      if (ourPrice > 0 && buyingPrice > 0) {
+        $("#product_profit").val((ourPrice - buyingPrice).toFixed(2));
+      }
+      
+      if (marketPrice > 0 && ourPrice > 0) {
+        $("#product_benefit").val((marketPrice - ourPrice).toFixed(2));
+      }
       $("#quantity").val(allProducts[index].quantity);
       $("#barcode").val(allProducts[index].barcode || allProducts[index]._id);
       $("#expirationDate").val(allProducts[index].expirationDate);
@@ -2287,6 +2323,8 @@ if (auth == undefined) {
             <td>${product.name}
             ${product.expiryAlert}</td>
             <td>${getCurrencySymbol()}${product.price}</td>
+            <td>${getCurrencySymbol()}${product.buying_price || '0.00'}</td>
+            <td>${getCurrencySymbol()}${product.profit || '0.00'}</td>
             <td>${product.stock == 1 ? product.quantity : "N/A"}
             ${product.stockAlert}
             </td>
@@ -3092,6 +3130,50 @@ $("#reportrange").on("apply.daterangepicker", function (ev, picker) {
   end_date = picker.endDate.toDate().toJSON();
 
   loadTransactions();
+});
+
+// Auto-sync Our Price to Price field and calculate profit
+$(document).ready(function() {
+  $("#product_our_price").on("input", function() {
+    const ourPrice = $(this).val();
+    $("#product_price").val(ourPrice);
+    
+    // Update benefit calculation (Market Price - Our Price)
+    const marketPrice = parseFloat($("#product_market_price").val()) || 0;
+    const ourPriceNum = parseFloat(ourPrice) || 0;
+    if (marketPrice > 0 && ourPriceNum > 0) {
+      $("#product_benefit").val((marketPrice - ourPriceNum).toFixed(2));
+    }
+    
+    // Calculate profit (Our Price - Buying Price)
+    const buyingPrice = parseFloat($("#product_buying_price").val()) || 0;
+    if (ourPriceNum > 0 && buyingPrice > 0) {
+      const profit = ourPriceNum - buyingPrice;
+      $("#product_profit").val(profit.toFixed(2));
+    }
+  });
+  
+  $("#product_buying_price").on("input", function() {
+    const buyingPrice = parseFloat($(this).val()) || 0;
+    const ourPrice = parseFloat($("#product_our_price").val()) || 0;
+    
+    // Calculate profit (Our Price - Buying Price)
+    if (ourPrice > 0 && buyingPrice > 0) {
+      const profit = ourPrice - buyingPrice;
+      $("#product_profit").val(profit.toFixed(2));
+    }
+  });
+  
+  $("#product_market_price").on("input", function() {
+    const marketPrice = parseFloat($(this).val()) || 0;
+    const ourPrice = parseFloat($("#product_our_price").val()) || 0;
+    
+    // Calculate benefit (Market Price - Our Price)
+    if (marketPrice > 0 && ourPrice > 0) {
+      const benefit = marketPrice - ourPrice;
+      $("#product_benefit").val(benefit.toFixed(2));
+    }
+  });
 });
 
 function authenticate() {
