@@ -283,12 +283,9 @@ app.decrementInventory = function (products) {
                 if (!product || !product.quantity) {
                     callback();
                 } else {
-                    let currentQty = parseFloat(product.quantity);
-                    let deduct = parseFloat(transactionProduct.quantity);
-                    if (isNaN(currentQty)) currentQty = 0;
-                    if (isNaN(deduct)) deduct = 0;
-                    let updatedQuantity = currentQty - deduct;
-                    if (updatedQuantity < 0) updatedQuantity = 0;
+                    let updatedQuantity =
+                        parseInt(product.quantity) -
+                        parseInt(transactionProduct.quantity);
 
                     inventoryDB.update(
                         {

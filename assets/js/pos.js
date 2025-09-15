@@ -534,6 +534,8 @@ if (auth == undefined) {
         product_name: data.name,
         sku: data.sku,
         price: data.price,
+        our_price: data.our_price || data.price,
+        market_price: data.market_price || data.price,
         quantity: 1,
         unit: data.unit || 'pcs',
       };
@@ -787,25 +789,37 @@ if (auth == undefined) {
     $.fn.submitDueOrder = function (status) {
       let items = "";
       let payment = 0;
+      let totalSavings = 0;
+      let additionalDiscount =parseFloat($("#inputDiscount").val()) || 0;
+      let cartTotal = 0;
       paymentType = $('.list-group-item.active').data('payment-type');
       cart.forEach((item, index) => {
         const qty = parseFloat(item.quantity || 0);
-        const our = parseFloat(item.price || 0);
-        const market = parseFloat(item.market_price || item.price || 0);
+        const our = parseFloat(item.our_price);
+        const market = parseFloat(item.market_price);
         const subtotalLine = qty * our;
+        const marketTotal = qty * market;
+        // Calculate savings per item
+        const itemSavings = (market - our) * qty;
+        totalSavings += itemSavings;
+
         items += `<tr>
               <td colspan="4"><strong>${DOMPurify.sanitize((index + 1).toString())}. ${DOMPurify.sanitize(item.product_name)}</strong></td>
         </tr>`;
         items += `<tr>
           <td style="text-align:center;">${DOMPurify.sanitize(qty.toString())}</td>
           <td style="text-align:center;">${DOMPurify.sanitize(market.toFixed(2))}</td>
-          <td style="text-align:center;">${DOMPurify.sanitize(our.toFixed(2))}</td>
+          <td style="text-align:center;"><b>${DOMPurify.sanitize(our.toFixed(2))}</b></td>
           <td style="text-align:center;">${DOMPurify.sanitize(subtotalLine.toFixed(2))}</td>
         </tr>`;
+
+        cartTotal += marketTotal;
       });
+      
+      totalSavings += additionalDiscount;
 
       let currentTime = new Date(moment());
-      let discount = $("#inputDiscount").val();
+      let discount = totalSavings;
       let customer = JSON.parse($("#customer").val());
       let date = moment(currentTime).format("YYYY-MM-DD HH:mm:ss");
       let paymentAmount = $("#payment").val().replace(",", "");
@@ -856,7 +870,7 @@ if (auth == undefined) {
         tax_row = `<tr>
                     <td>VAT(${getVATPercentage()})% </td>
                     <td>:</td>
-                    <td class="text-right">${getCurrencySymbol()} ${moneyFormat(
+                    <td style="text-align:center;">${getCurrencySymbol()} ${moneyFormat(
                       parseFloat(totalVat).toFixed(2),
                     )}</td>
                 </tr>`;
@@ -885,7 +899,7 @@ if (auth == undefined) {
 
       logo = path.join(img_path, validator.unescape(settings.img));
 
-      receipt = `<div style="font-size: 12px">                            
+      receipt = `<div style="font-size: 12px;font-weight: 1000;">                            
         <p style="text-align: center;">
         ${
           checkFileExists(logo)
@@ -900,7 +914,7 @@ if (auth == undefined) {
             } 
             ${validator.unescape(settings.tax) != "" ? "Vat No: " + validator.unescape(settings.tax) + "<br>" : ""} 
         </p>
-        <hr>
+        <hr style="border: none; border-top: 2px dotted #000; margin: 4px 0; width: 100%;">
         <left>
             <p>
             ඇණවුම් අංකය : ${orderNumber} <br>
@@ -913,7 +927,7 @@ if (auth == undefined) {
             </p>
 
         </left>
-        <hr>
+        <hr style="border: none; border-top: 2px dotted #000; margin: 4px 0; width: 100%;">
         <table width="100%">
                     <colgroup>
                 <col style="width: 30%;">
@@ -923,36 +937,37 @@ if (auth == undefined) {
               </colgroup>
             <thead>
             <tr>
-                <th>ප්‍රමාණය</th>
-                <th>සා/මිල</th>
-                <th>අපේ මිල</th>
-                <th class="text-right">වටිනාකම</th>
+                <th style="font-size: 10px;text-align: center;">ප්‍රමාණය</th>
+                <th style="font-size: 10px;text-align: center;">සා/මිල</th>
+                <th style="font-size: 10px;text-align: center;">අපේ මිල</th>
+                <th style="font-size: 10px;text-align: center;">වටිනාකම</th>
             </tr>
             </thead>
             <tbody>
              ${items}
-            <tr><td colspan="4"><hr></td></tr>
+            <tr><td colspan="4"><hr style="border: none; border-top: 2px dotted #000; margin: 4px 0; width: 100%;"></td></tr>
             <tr>                        
-                <td><b>මුළු වටිනාකම</b></td>
+                <td><b>එකතුව</b></td>
                 <td>:</td>
                 <td> </td>
                 <td class="text-right"><b>${getCurrencySymbol()}${moneyFormat(
-                  subTotal.toFixed(2),
+                  cartTotal.toFixed(2),
                 )}</b></td>
             </tr>
             <tr>
-                <td>Discount</td>
+                <td>වට්ටම</td>
                 <td>:</td>
-                <td class="text-right">${
+                <td> </td>
+                <td class="text-right"><b>${
                   discount > 0
                     ? getCurrencySymbol() +
                       moneyFormat(parseFloat(discount).toFixed(2))
                     : ""
-                }</td>
+                }</b></td>
             </tr>
             ${tax_row}
             <tr>
-                <td><h5>Total</h5></td>
+                <td><h5>මුළු වටිනාකම</h5></td>
                 <td><h5>:</h5></td>
                 <td> </td>
                 <td class="text-right">
@@ -965,10 +980,13 @@ if (auth == undefined) {
             </tbody>
             </table>
             <br>
-            <hr>
+            <hr style="border: none; border-top: 2px dotted #000; margin: 4px 0; width: 100%;">
+
             <br>
             <p style="text-align: center;">
              ${validator.unescape(settings.footer)}
+              Designed by DigiB POS<br>
+              Contact: 0707209768
              </p>
             </div>`;
 
@@ -1035,7 +1053,7 @@ if (auth == undefined) {
             cashier: user.fullname,
             discount: parseFloat(discount) || 0
           };
-          printSinhalaBill(transactionData);
+         
           
           cart = [];
           receipt = DOMPurify.sanitize(receipt,{ ALLOW_UNKNOWN_PROTOCOLS: true });
@@ -1167,6 +1185,8 @@ if (auth == undefined) {
             product_name: product.product_name,
             sku: product.sku,
             price: product.price,
+            our_price: product.our_price || product.price,
+            market_price: product.market_price || product.price,
             quantity: product.quantity,
           };
           cart.push(item);
@@ -1190,6 +1210,8 @@ if (auth == undefined) {
             product_name: product.product_name,
             sku: product.sku,
             price: product.price,
+            our_price: product.our_price || product.price,
+            market_price: product.market_price || product.price,
             quantity: product.quantity,
           };
           cart.push(item);
@@ -1447,6 +1469,8 @@ if (auth == undefined) {
           product_name: currentProductForPopup.name,
           sku: currentProductForPopup.sku,
           price: parseFloat(currentProductForPopup.price),
+          our_price: parseFloat(currentProductForPopup.our_price || currentProductForPopup.price),
+          market_price: parseFloat(currentProductForPopup.market_price || currentProductForPopup.price),
           quantity: finalQuantity,
           unit: finalUnit,
           barcode: currentProductForPopup.barcode
@@ -1471,11 +1495,8 @@ if (auth == undefined) {
       // Don't change the available unit - keep it as product's original unit
     });
 
-    // Sinhala Bill Printing for 80mm Thermal Printer
-    function printSinhalaBill(transactionData) {
-      const billContent = generateSinhalaBillContent(transactionData);
-      printBill(billContent);
-    }
+    
+  
 
     function generateSinhalaBillContent(data) {
       const now = new Date();
@@ -1579,95 +1600,12 @@ if (auth == undefined) {
       return bill;
     }
 
-    function printBill(content) {
-      // Create a new window for printing
-      const printWindow = window.open('', '_blank', 'width=400,height=600');
-      
-      // Get logo path if available
-      let logoHtml = '';
-      if (settings && settings.img) {
-        const logo = path.join(img_path, validator.unescape(settings.img));
-        if (checkFileExists(logo)) {
-          logoHtml = `<img style='max-width: 50px; display: block; margin: 0 auto;' src='${logo}' /><br>`;
-        }
-      }
-      
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Bill Print</title>
-            <style>
-              @media print {
-                @page { 
-                  size: 80mm auto; 
-                  margin: 0;
-                }
-                body { 
-                  font-family: 'Courier New', monospace; 
-                  font-size: 14px; 
-                  font-weight: bold;
-                  line-height: 1.3;
-                  margin: 0;
-                  padding: 8px;
-                  width: 80mm;
-                }
-                .bill-content {
-                  white-space: pre-line;
-                  font-size: 13px;
-                  font-weight: bold;
-                }
-                .logo {
-                  text-align: center;
-                  margin-bottom: 10px;
-                }
-              }
-              body { 
-                font-family: 'Courier New', monospace; 
-                font-size: 14px; 
-                font-weight: bold;
-                line-height: 1.3;
-                margin: 0;
-                padding: 8px;
-                width: 80mm;
-              }
-              .bill-content {
-                white-space: pre-line;
-                font-size: 13px;
-                font-weight: bold;
-              }
-              .logo {
-                text-align: center;
-                margin-bottom: 10px;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="logo">${logoHtml}</div>
-            <div class="bill-content">${content}</div>
-            <script>
-              window.onload = function() {
-                window.print();
-                setTimeout(function() {
-                  window.close();
-                }, 1000);
-              }
-            </script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-    }
+    
 
     // Store current bill data for preview
     let currentBillData = null;
 
-    // Manual Sinhala bill printing from order modal
-    window.printSinhalaBillFromModal = function() {
-      const transactionData = extractTransactionDataFromModal();
-      if (transactionData) {
-        printSinhalaBill(transactionData);
-      }
-    };
+   
 
     // Preview Sinhala bill from order modal
     window.previewSinhalaBillFromModal = function() {
@@ -1693,13 +1631,8 @@ if (auth == undefined) {
       }
     };
 
-    // Print from preview
-    window.printFromPreview = function() {
-      if (currentBillData) {
-        printSinhalaBill(currentBillData);
-        $("#sinhalaBillPreviewModal").modal('hide');
-      }
-    };
+   
+ 
 
     // Extract transaction data from modal
     function extractTransactionDataFromModal() {
@@ -1976,7 +1909,7 @@ if (auth == undefined) {
       const market = parseFloat($("#product_market_price").val()||0);
       const our = parseFloat($("#product_our_price").val()||0);
       if (!isNaN(our) && our>0) {
-        $("#product_price").val(our.toFixed(2));
+        $("#product_our_price").val(our.toFixed(2));
       }
       if (!isNaN(market) && !isNaN(our)) {
         $("#product_benefit").val((market-our).toFixed(2));
@@ -2070,6 +2003,9 @@ if (auth == undefined) {
 
       $("#productName").val(allProducts[index].name);
       $("#product_price").val(allProducts[index].price);
+      $("#product_market_price").val(allProducts[index].market_price || '');
+      $("#product_our_price").val(allProducts[index].our_price || '');
+      $("#product_benefit").val(allProducts[index].benefit || '');
       $("#quantity").val(allProducts[index].quantity);
       $("#barcode").val(allProducts[index].barcode || allProducts[index]._id);
       $("#expirationDate").val(allProducts[index].expirationDate);
@@ -2613,7 +2549,16 @@ if (auth == undefined) {
       $("#userModal").modal("show");
     });
 
-    $("#settings").on("click", function () {
+    $("#settings").on("click", async function () {
+      // Load available printers
+      try {
+        const printers = await ipcRenderer.invoke('get-printers');
+        populatePrinterDropdown(printers);
+      } catch (error) {
+        console.error('Error getting printers:', error);
+        populatePrinterDropdown([]);
+      }
+      
       if (platform.app == "Network Point of Sale Terminal") {
         $("#net_settings_form").show(500);
         $("#settings_form").hide(500);
@@ -2660,8 +2605,88 @@ if (auth == undefined) {
             return $(this).text() == validator.unescape(settings.app);
           })
           .prop("selected", true);
+          
+        // Set selected printer if available
+        if (settings.printer_device) {
+          $("#printer_device").val(validator.unescape(settings.printer_device));
+        }
       }
     });
+
+    // Function to populate printer dropdown
+    function populatePrinterDropdown(printers) {
+      console.log('Received printers:', printers);
+      console.log('Printers type:', typeof printers);
+      console.log('Printers length:', printers ? printers.length : 'undefined');
+      
+      const printerSelect = $('#printer_device');
+      if (printerSelect.length === 0) {
+        console.error('Printer select element not found!');
+        return;
+      }
+      
+      printerSelect.empty();
+      
+      // Add default option
+      printerSelect.append(`<option value="">${i18next.t('messages.selectPrinter')}</option>`);
+      
+      // Add available printers
+      if (printers && Array.isArray(printers) && printers.length > 0) {
+        printers.forEach(printer => {
+          console.log('Adding printer:', printer.name || printer);
+          const printerName = printer.name || printer;
+          printerSelect.append(`<option value="${printerName}">${printerName}</option>`);
+        });
+      } else {
+        console.log('No printers found or invalid data');
+        printerSelect.append('<option value="">No printers found</option>');
+      }
+      
+      // Add manual entry option
+      printerSelect.append('<option value="manual">Enter printer name manually...</option>');
+      
+      // Set selected printer if available in settings
+      if (settings && settings.printer_device) {
+        printerSelect.val(validator.unescape(settings.printer_device));
+      }
+      
+      // Handle manual entry
+      printerSelect.on('change', function() {
+        if ($(this).val() === 'manual') {
+          const manualName = prompt('Enter your printer name:');
+          if (manualName && manualName.trim() !== '') {
+            // Add the manual printer to the list
+            $(this).append(`<option value="${manualName}" selected>${manualName}</option>`);
+            $(this).val(manualName);
+          } else {
+            $(this).val('');
+          }
+        }
+      });
+    }
+
+    // Test function to manually get printers (for debugging)
+    window.testGetPrinters = async function() {
+      console.log('Testing printer detection...');
+      try {
+        const printers = await ipcRenderer.invoke('get-printers');
+        populatePrinterDropdown(printers);
+      } catch (error) {
+        console.error('Error getting printers:', error);
+      }
+    };
+    
+    // Test IPC communication
+    window.testIPC = function() {
+      console.log('Testing IPC communication...');
+      ipcRenderer.send('test-ipc');
+    };
+    
+    // Listen for IPC test response
+    ipcRenderer.on('test-ipc-response', (event, response) => {
+      console.log('IPC test response:', response);
+    });
+    
  });
 
   $("#rmv_logo").on("click", function () {
@@ -2897,160 +2922,152 @@ function tillFilter(tills) {
 $.fn.viewTransaction = function (index) {
   transaction_index = index;
 
-  let discount = allTransactions[index].discount;
-  let customer =
-    allTransactions[index].customer == 0
+  const transaction = allTransactions[index];
+  const discount = parseFloat(transaction.discount) || 0;
+  const customer =
+    transaction.customer == 0 || !transaction.customer
       ? "Walk in Customer"
-      : allTransactions[index].customer.username;
-  let refNumber =
-    allTransactions[index].ref_number != ""
-      ? allTransactions[index].ref_number
-      : allTransactions[index].order;
-  let orderNumber = allTransactions[index].order;
-  let paymentMethod = "";
-  let tax_row = "";
-  let items = "";
-  let products = allTransactions[index].items;
+      : transaction.customer.name;
+  const refNumber = transaction.ref_number != "" ? transaction.ref_number : transaction.order;
+  const orderNumber = transaction.order;
+  const paymentMethod = transaction.payment_type || "";
+  const itemsArr = transaction.items;
 
-  products.forEach((item) => {
-    items += `<tr><td>${item.product_name}</td><td>${
-      item.quantity
-    } </td><td class="text-right"> ${getCurrencySymbol()} ${moneyFormat(
-      Math.abs(item.price).toFixed(2),
-    )} </td></tr>`;
+  let items = "";
+  let totalMarket = 0;
+  let totalOur = 0;
+
+  itemsArr.forEach((item, idx) => {
+    const qty = parseFloat(item.quantity || 0);
+    const our = parseFloat(item.price || 0);
+    const market = parseFloat(item.market_price || item.price);
+    const subtotalLine = qty * our;
+    const marketTotal = qty * market;
+
+    totalMarket += marketTotal;
+    totalOur += subtotalLine;
+
+    items += `<tr>
+      <td colspan="4"><strong>${idx + 1}. ${DOMPurify.sanitize(item.product_name)}</strong></td>
+    </tr>`;
+    items += `<tr>
+      <td style="text-align:center;">${DOMPurify.sanitize(qty.toString())}</td>
+      <td style="text-align:center;">${DOMPurify.sanitize(market.toFixed(2))}</td>
+      <td style="text-align:center;"><b>${DOMPurify.sanitize(our.toFixed(2))}</b></td>
+      <td style="text-align:center;">${DOMPurify.sanitize(subtotalLine.toFixed(2))}</td>
+    </tr>`;
   });
 
-  paymentMethod = allTransactions[index].payment_type;
- 
+  const totalSavings = totalMarket - totalOur + discount;
 
-  if (allTransactions[index].paid != "") {
-    payment = `<tr>
-                    <td>Paid</td>
-                    <td>:</td>
-                    <td class="text-right">${getCurrencySymbol()} ${moneyFormat(
-                      Math.abs(allTransactions[index].paid).toFixed(2),
-                    )}</td>
-                </tr>
-                <tr>
-                    <td>Change</td>
-                    <td>:</td>
-                    <td class="text-right">${getCurrencySymbol()} ${moneyFormat(
-                      Math.abs(allTransactions[index].change).toFixed(2),
-                    )}</td>
-                </tr>
-                <tr>
-                    <td>Method</td>
-                    <td>:</td>
-                    <td class="text-right">${paymentMethod}</td>
-                </tr>`;
+  let paymentHTML = "";
+  if (transaction.paid && transaction.paid != 0) {
+    paymentHTML = `<tr>
+        <td>Paid</td>
+        <td>:</td>
+        <td> </td>
+        <td class="text-right">${getCurrencySymbol()} ${moneyFormat(transaction.paid)}</td>
+    </tr>
+    <tr>
+        <td>Change</td>
+        <td>:</td>
+        <td> </td>
+        <td class="text-right">${getCurrencySymbol()} ${moneyFormat(transaction.change)}</td>
+    </tr>
+    <tr>
+        <td>Method</td>
+        <td>:</td>
+        <td> </td>
+        <td class="text-right">${paymentMethod}</td>
+    </tr>`;
   }
 
+  let taxRow = "";
   if (settings.charge_tax) {
-    tax_row = `<tr>
-                <td>Vat(${getVATPercentage()})% </td>
-                <td>:</td>
-                <td class="text-right">${getCurrencySymbol()}${parseFloat(
-                  allTransactions[index].tax,
-                ).toFixed(2)}</td>
-            </tr>`;
+    taxRow = `<tr>
+        <td>VAT(${getVATPercentage()}%)</td>
+        <td>:</td>
+        <td style="text-align:center;">${getCurrencySymbol()} ${parseFloat(transaction.tax).toFixed(2)}</td>
+    </tr>`;
   }
 
-    logo = path.join(img_path, validator.unescape(settings.img));
-      
-      receipt = `<div style="font-size: 12px">                            
-        <p style="text-align: center;">
-        ${
-          checkFileExists(logo)
-            ? `<img style='max-width: 50px' src='${logo}' /><br>`
-            : ``
-        }
-            <span style="font-size: 22px;">${validator.unescape(settings.store)}</span> <br>
-            ${validator.unescape(settings.address_one)} <br>
-            ${validator.unescape(settings.address_two)} <br>
-            ${
-              validator.unescape(settings.contact) != "" ? "Tel: " + validator.unescape(settings.contact) + "<br>" : ""
-            } 
-            ${validator.unescape(settings.tax) != "" ? "Vat No: " + validator.unescape(settings.tax) + "<br>" : ""} 
+  const logo = path.join(img_path, validator.unescape(settings.img));
+
+  let receipt = `<div style="font-size: 12px; font-weight: 700;">                            
+    <p style="text-align: center;">
+      ${checkFileExists(logo) ? `<img style='max-width: 50px' src='${logo}' /><br>` : ``}
+      <span style="font-size: 22px;">${validator.unescape(settings.store)}</span><br>
+      ${validator.unescape(settings.address_one)}<br>
+      ${validator.unescape(settings.address_two)}<br>
+      ${validator.unescape(settings.contact) ? "Tel: " + validator.unescape(settings.contact) + "<br>" : ""}
+      ${validator.unescape(settings.tax) ? "Vat No: " + validator.unescape(settings.tax) + "<br>" : ""}
     </p>
-    <hr>
+    <hr style="border: none; border-top: 2px dotted #000; margin: 4px 0; width: 100%;">
     <left>
-        <p>
-        ඉන්වොයිස් : ${orderNumber} <br>
-        යොමු අංකය : ${refNumber} <br>
-        ගැණුම්කරු : ${
-          allTransactions[index].customer == 0 || !allTransactions[index].customer
-            ? "Walk in Customer"
-            : allTransactions[index].customer.name
-        } <br>
-        කැෂියර් : ${allTransactions[index].user} <br>
-        දිනය : ${moment(allTransactions[index].date).format(
-          "DD MMM YYYY HH:mm:ss",
-        )}<br>
-        </p>
-
+      <p>
+        ඉන්වොයිස් : ${orderNumber}<br>
+        යොමු අංකය : ${refNumber}<br>
+        ගැණුම්කරු : ${customer}<br>
+        කැෂියර් : ${transaction.user}<br>
+        දිනය : ${moment(transaction.date).format("YYYY-MM-DD HH:mm:ss")}<br>
+      </p>
     </left>
-    <hr>
-    <table width="90%">
-        <thead>
+    <hr style="border: none; border-top: 2px dotted #000; margin: 4px 0; width: 100%;">
+    <table width="100%">
+      <thead>
         <tr>
-            <th>අයිතම</th>
-            <th>ප්‍රමාණය</th>
-            <th class="text-right">මිල</th>
+          <th style="font-size: 10px; text-align:center;">ප්‍රමාණය</th>
+          <th style="font-size: 10px; text-align:center;">සා/මිල</th>
+          <th style="font-size: 10px; text-align:center;">අපේ මිල</th>
+          <th style="font-size: 10px; text-align:center;">වටිනාකම</th>
         </tr>
-        </thead>
-        <tbody>
-        ${items}                
-        <tr><td colspan="3"><hr></td></tr>
-        <tr>                        
-            <td><b>මුළු වටිනාකම</b></td>
-            <td>:</td>
-            <td class="text-right"><b>${getCurrencySymbol()}${moneyFormat(
-              allTransactions[index].subtotal,
-            )}</b></td>
+      </thead>
+      <tbody>
+        ${items}
+        <tr><td colspan="4"><hr style="border: none; border-top: 2px dotted #000; margin: 4px 0;"></td></tr>
+        <tr>
+          <td><b>එකතුව</b></td>
+          <td>:</td>
+          <td></td>
+          <td class="text-right"><b>${getCurrencySymbol()} ${moneyFormat(totalMarket)}</b></td>
         </tr>
         <tr>
-            <td>Discount</td>
-            <td>:</td>
-            <td class="text-right">${
-              discount > 0
-                ? getCurrencySymbol() +
-                  moneyFormat(
-                    parseFloat(allTransactions[index].discount).toFixed(2),
-                  )
-                : ""
-            }</td>
+          <td>වට්ටම</td>
+          <td>:</td>
+          <td></td>
+          <td class="text-right"><b>${getCurrencySymbol()} ${moneyFormat(discount)}</b></td>
         </tr>
-        
-        ${tax_row}
-    
         <tr>
-            <td><h5>මුළු</h5></td>
-            <td><h5>:</h5></td>
-            <td class="text-right">
-                <h5>${getCurrencySymbol()}${moneyFormat(
-                  allTransactions[index].total,
-                )}</h5>
-            </td>
+          <td>වට්ටම(අපෙන් ලබාගත්)</td>
+          <td>:</td>
+          <td></td>
+          <td class="text-right"><b>${getCurrencySymbol()} ${moneyFormat(totalSavings)}</b></td>
         </tr>
-        ${payment == 0 ? "" : payment}
-        </tbody>
-        </table>
-        <br>
-        <hr>
-        <br>
-        <p style="text-align: center;">
-         ${validator.unescape(settings.footer)}
-         </p>
-        </div>`;
+        ${taxRow}
+        <tr>
+          <td><h5>මුළු වටිනාකම</h5></td>
+          <td><h5>:</h5></td>
+          <td></td>
+          <td class="text-right"><h5>${getCurrencySymbol()} ${moneyFormat(transaction.total)}</h5></td>
+        </tr>
+        ${paymentHTML}
+      </tbody>
+    </table>
+    <br>
+    <hr style="border: none; border-top: 2px dotted #000; margin: 4px 0; width: 100%;">
+    <br>
+    <p style="text-align: center;">
+      ${validator.unescape(settings.footer)}<br>
+      Designed by DigiB POS<br>
+      Contact: 0707209768
+    </p>
+  </div>`;
 
-        //prevent DOM XSS; allow windows paths in img src
-        receipt = DOMPurify.sanitize(receipt,{ ALLOW_UNKNOWN_PROTOCOLS: true });
-
-  $("#viewTransaction").html("");
+  receipt = DOMPurify.sanitize(receipt, { ALLOW_UNKNOWN_PROTOCOLS: true });
   $("#viewTransaction").html(receipt);
-
   $("#orderModal").modal("show");
 };
+
 
 $("#status").on("change", function () {
   by_status = $(this).find("option:selected").val();

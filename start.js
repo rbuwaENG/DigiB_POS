@@ -10,10 +10,28 @@ const path = require("path");
 const contextMenu = require("electron-context-menu");
 let { Menu, template } = require("./assets/js/native_menu/menu");
 const menuController = require('./assets/js/native_menu/menuController.js');
+const Datastore = require("@seald-io/nedb");
+const validator = require("validator");
 const isPackaged = app.isPackaged;
 const menu = Menu.buildFromTemplate(template);
 Menu.setApplicationMenu(menu);
 let mainWindow;
+
+// Settings database setup
+const appName = process.env.APPNAME;
+const appData = process.env.APPDATA;
+const settingsDbPath = path.join(
+    appData,
+    appName,
+    "server",
+    "databases",
+    "settings.db",
+);
+
+let settingsDB = new Datastore({
+    filename: settingsDbPath,
+    autoload: true,
+});
 
 function createWindow() {
 
@@ -83,20 +101,52 @@ ipcMain.on("restart-app", () => {
 
 
 
+// Test IPC communication
+ipcMain.on('test-ipc', (event) => {
+    console.log('IPC test received');
+    event.reply('test-ipc-response', 'IPC communication working');
+});
+
+ipcMain.handle('get-printers', async () => {
+    console.log('get-printers IPC received');
+    
+    // Instead of using getPrintersAsync() which triggers dialog,
+    // let's provide a manual list of common printers
+    const commonPrinters = [
+        { name: "Microsoft Print to PDF", displayName: "Microsoft Print to PDF" },
+        { name: "Default Printer", displayName: "Default Printer" },
+        { name: "Canon LBP6030/6040/6018L", displayName: "Canon LBP6030/6040/6018L" },
+        { name: "HP LaserJet", displayName: "HP LaserJet" },
+        { name: "Epson Printer", displayName: "Epson Printer" }
+    ];
+    
+    console.log('Returning common printers:', commonPrinters);
+    return commonPrinters;
+});
+
 ipcMain.on('print-bill', (event, billHTML) => {
-    // Create hidden window for printing
-    const printWindow = new BrowserWindow({ show: false });
+    // Get printer name from settings
+    settingsDB.findOne({ _id: 1 }, (err, settingsDoc) => {
+        let printerName = 'Canon LBP6030/6040/6018L'; // Default fallback
+        
+        if (!err && settingsDoc && settingsDoc.settings && settingsDoc.settings.printer_device) {
+            printerName = validator.unescape(settingsDoc.settings.printer_device);
+        }
+        
+        // Create hidden window for printing
+        const printWindow = new BrowserWindow({ show: false });
 
-    printWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(billHTML));
+        printWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(billHTML));
 
-    printWindow.webContents.on('did-finish-load', () => {
-        printWindow.webContents.print({
-            silent: true,
-            printBackground: true,
-            deviceName: 'Canon LBP6030/6040/6018L'
-        }, (success, errorType) => {
-            if (!success) console.log('Print failed:', errorType);
-            printWindow.close();
+        printWindow.webContents.on('did-finish-load', () => {
+            printWindow.webContents.print({
+                silent: true,
+                printBackground: true,
+                deviceName: printerName
+            }, (success, errorType) => {
+                if (!success) console.log('Print failed:', errorType);
+                printWindow.close();
+            });
         });
     });
 });

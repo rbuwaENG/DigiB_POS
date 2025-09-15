@@ -79,7 +79,7 @@
     "totalItems": "Total Item(s)",
     "discount": "Discount",
     "amount": "amount",
-    "grossPrice": "Gross Price (inc {{tax}}% Tax)",
+    "grossPrice": "Gross Price (inc Tax)",
     "pay": "Pay",
     "hold": "Hold",
     "cancelOrder": "Cancel",
@@ -272,7 +272,10 @@
     "dataNotFound": "Data not found",
     "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?",
     "printError": "Print error occurred",
-    "receiptPrinted": "Receipt printed successfully"
+    "receiptPrinted": "Receipt printed successfully",
+    "defaultPrinter": "Default Printer",
+    "selectPrinter": "Select a printer...",
+    "printerDescription": "Select the printer to use for silent printing."
   },
   "currency": {
     "symbol": "$",

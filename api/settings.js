@@ -151,6 +151,7 @@ app.post("/post", function (req, res) {
             charge_tax: req.body.charge_tax === 'on',
             footer: validator.escape(req.body.footer),
             img: image,
+            printer_device: validator.escape(req.body.printer_device),
         },
     };
 

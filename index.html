@@ -275,9 +275,7 @@
                                 <button type="button" id="payButton" class="btn btn-success waves-effect waves-light">
                                     <span class="btn-label"><i class="fa fa-money"></i></span><span data-i18n="pos.pay">Pay</span>
                                 </button>
-                                <button type="button" id="previewBillButton" class="btn btn-warning waves-effect waves-light">
-                                    <span class="btn-label"><i class="fa fa-eye"></i></span>Preview Sinhala Bill
-                                </button>
+                                
                             </div>
                             <hr>
                         </div>
@@ -394,7 +392,7 @@
                                 <br>
                                 <div class="input-group">
                                     <span class="input-group-addon" id="basic-addon3">Payment <span id="payment_curr"></span> </span>
-                                    <input type="text" placeholder="0.0" class="form-control" id="paymentText" aria-describedby="basic-addon3" readonly>
+                                    <input type="text" placeholder="0.0" class="form-control" id="paymentText" aria-describedby="basic-addon3">
                                     <input type="hidden" class="form-control" id="payment" aria-describedby="basic-addon3">
                                 </div>
                                 <hr>
@@ -549,11 +547,7 @@
                                 <label for="product_benefit" data-i18n="products.benefit">Benefit</label>
                                 <input type="text" name="benefit" placeholder="Benefit" class="form-control" id="product_benefit" readonly>
                             </div>
-                            <div class="form-group">
-                                <label for="product_price">Price</label>
-                                <small id="unit_note_price" class="text-muted" style="margin-left:6px;">per pcs</small>
-                                <input type="text" required="required" name="price" placeholder="Price" class="form-control number-input" id="product_price">
-                            </div>
+                           
                             <div class="form-group">
                                 <label for="expirationDate">Expiry Date</label>
                                 <input type="text" name="expirationDate" parsley-trigger="change" placeholder="dd/mm/yyyy" class="form-control" id="expirationDate" readonly>
@@ -769,9 +763,8 @@
             <div class="modal-dialog modal-sm">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <button id="printBtn" class="btn btn-sm btn-success" onclick="$(this).print()">Print</button>
-                        <button class="btn btn-sm btn-info" onclick="printSinhalaBillFromModal()">Print Sinhala Bill</button>
-                        <button class="btn btn-sm btn-warning" onclick="previewSinhalaBillFromModal()">Preview Sinhala Bill</button>
+                        <button id="printBtn" class="btn btn-sm btn-success" ">Print(Press Enter)</button>
+                      
                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                     </div>
                     <div class="modal-body" id="viewTransaction">
@@ -1003,6 +996,11 @@
                             <label for="userName">Receipt Footer</label>
                             <textarea name="footer" class="form-control" id="footer"></textarea>
                         </div>
+                        <div class="form-group">
+                            <label for="printer_device" data-i18n="messages.defaultPrinter">Default Printer</label>
+                            <select name="printer_device" class="form-control" id="printer_device"></select>
+                            <small class="text-gray" data-i18n="messages.printerDescription">Select the printer to use for silent printing.</small>
+                        </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -1072,6 +1070,11 @@
     </div>
 
     <script>
+         $(document).on('keydown', function(e) {
+            if (e.key === "Enter") {
+                $("#confirmPayment").trigger("click");
+            }
+        });
         // Debug script to check i18n status
         const { ipcRenderer } = require('electron');
 
