@@ -10,6 +10,16 @@ let fs = require("fs");
 let path = require("path");
 let moment = require("moment");
 let { ipcRenderer } = require("electron");
+// Ensure i18next is safely available even if not yet loaded
+if (typeof window !== 'undefined' && typeof window.i18next === 'undefined') {
+  window.i18next = {
+    t: function (key, arg2) {
+      // when called as t(key, 'fallback') or t(key, {vars})
+      return typeof arg2 === 'string' ? arg2 : key;
+    },
+    isInitialized: false,
+  };
+}
 let dotInterval = setInterval(function () {
   $(".dot").text(".");
 }, 3000);
@@ -57,6 +67,16 @@ let auth_error = "Incorrect username or password";
 let auth_empty = "Please enter a username and password";
 let holdOrderlocation = $("#renderHoldOrders");
 let customerOrderLocation = $("#renderCustomerOrders");
+
+// Helper function to safely get currency symbol
+function getCurrencySymbol() {
+  return settings && settings.symbol ? validator.unescape(settings.symbol) : '$';
+}
+
+// Helper function to safely get VAT percentage
+function getVATPercentage() {
+  return settings && settings.percentage ? validator.unescape(settings.percentage) : '0';
+}
 let storage = new Store();
 let settings;
 let platform;
@@ -75,6 +95,7 @@ const permissions = [
   "perm_transactions",
   "perm_users",
   "perm_settings",
+  "perm_suppliers",
 ];
 notiflix.Notify.init({
   position: "right-top",
@@ -226,15 +247,15 @@ if (auth == undefined) {
     loadProducts();
     loadCustomers();
 
-    if (settings && validator.unescape(settings.symbol)) {
-      $("#price_curr, #payment_curr, #change_curr").text(validator.unescape(settings.symbol));
+    if (settings && settings.symbol) {
+      $("#price_curr, #payment_curr, #change_curr").text(getCurrencySymbol());
     }
 
     setTimeout(function () {
       if (settings == undefined && auth != undefined) {
         $("#settingsModal").modal("show");
       } else {
-        vat = parseFloat(validator.unescape(settings.percentage));
+        vat = parseFloat(getVATPercentage());
         $("#taxInfo").text(settings.charge_tax ? vat : 0);
       }
     }, 1500);
@@ -261,6 +282,9 @@ if (auth == undefined) {
     }
     if (0 == user.perm_settings) {
       $(".p_five").hide();
+    }
+    if (0 == user.perm_suppliers) {
+      $(".p_six").hide();
     }
 
     function loadProducts() {
@@ -338,11 +362,11 @@ if (auth == undefined) {
                                         }</span>
                                         <span class="${item_stockStatus<1?'text-danger':''}"><span class="stock">STOCK </span><span class="count">${
                                           item.stock == 1
-                                            ? item.quantity
+                                            ? (item.quantity + (item.unit? (' ' + item.unit): ''))
                                             : "N/A"
                                         }</span></span></div>
                                         <span class="text-success text-center"><b data-plugin="counterup">${
-                                          validator.unescape(settings.symbol) +
+                                          getCurrencySymbol() +
                                           moneyFormat(item.price)
                                         }</b> </span>
                             </div>
@@ -424,7 +448,7 @@ if (auth == undefined) {
         success: function (product) {
           $(".search-barcode-btn").html(searchBarCodeIcon);
           const expired = isExpired(product.expirationDate);
-          if (product._id != undefined && product.quantity >= 1 && !expired) {
+          if (product._id != undefined && parseFloat(product.quantity) >= 0.01 && !expired) {
             $(this).addProductToCart(product);
             $("#searchBarCode").get(0).reset();
             $("#basic-addon2").empty();
@@ -437,7 +461,7 @@ if (auth == undefined) {
               `${product.name} is expired`,
               "Ok",
             );
-          } else if (product.quantity < 1) {
+          } else if (parseFloat(product.quantity) < 0.01) {
             notiflix.Report.info(
               "Out of stock!",
               "This item is currently unavailable",
@@ -491,12 +515,27 @@ if (auth == undefined) {
     });
 
     $.fn.addProductToCart = function (data) {
+      // Check if product is uncountable (not pcs)
+      if (data.unit && data.unit !== 'pcs') {
+        // Show quantity popup for uncountable products
+        currentProductForPopup = data;
+        $("#popupQuantity").val('');
+        renderPopupUnitButtons(data.unit);
+        $("#popupUnit").text(data.unit);
+        $("#popupAvailable").text(data.quantity);
+        $("#popupAvailableUnit").text(data.unit);
+        $("#quantityPopupModal").modal('show');
+        return;
+      }
+
+      // For countable products (pcs), add directly
       item = {
         id: data._id,
         product_name: data.name,
         sku: data.sku,
         price: data.price,
         quantity: 1,
+        unit: data.unit || 'pcs',
       };
 
       if ($(this).isExist(item)) {
@@ -527,12 +566,12 @@ if (auth == undefined) {
       let grossTotal;
       let total_items = 0;
       $.each(cart, function (index, data) {
-        total += data.quantity * data.price;
-        total_items += parseInt(data.quantity);
+        total += parseFloat(data.quantity) * data.price;
+        total_items += parseFloat(data.quantity);
       });
       $("#total").text(total_items);
       total = total - $("#inputDiscount").val();
-      $("#price").text(validator.unescape(settings.symbol) + moneyFormat(total.toFixed(2)));
+      $("#price").text(getCurrencySymbol() + moneyFormat(total.toFixed(2)));
 
       subTotal = total;
 
@@ -549,7 +588,7 @@ if (auth == undefined) {
 
       orderTotal = grossTotal.toFixed(2);
 
-      $("#gross_price").text(validator.unescape(settings.symbol) + moneyFormat(orderTotal));
+      $("#gross_price").text(getCurrencySymbol() + moneyFormat(orderTotal));
       $("#payablePrice").val(moneyFormat(grossTotal));
     };
 
@@ -573,7 +612,7 @@ if (auth == undefined) {
                   class: "form-control",
                   type: "text",
                   readonly: "",
-                  value: data.quantity,
+                  value: data.quantity + (data.unit ? (' ' + data.unit) : ''),
                   min: "1",
                   onInput: "$(this).qtInput(" + index + ")",
                 }),
@@ -588,7 +627,7 @@ if (auth == undefined) {
             $("<div>", {
               class: "col-md-3",
               text:
-                validator.unescape(settings.symbol) +
+                getCurrencySymbol() +
                 moneyFormat((data.price * data.quantity).toFixed(2)),
             }),
             $("<div>", { class: "col-md-1" }).append(
@@ -613,9 +652,9 @@ if (auth == undefined) {
         return selected._id == parseInt(item.id);
       });
 
-      if (product[0].stock == 1) {
-        if (item.quantity < product[0].quantity) {
-          item.quantity = parseInt(item.quantity) + 1;
+      if (product.length > 0 && product[0].stock == 1) {
+        if (parseFloat(item.quantity) < parseFloat(product[0].quantity)) {
+          item.quantity = (parseFloat(item.quantity) + 1).toFixed(item.unit && item.unit !== 'pcs' ? 2 : 0);
           $(this).renderTable(cart);
         } else {
           notiflix.Report.info(
@@ -625,15 +664,17 @@ if (auth == undefined) {
           );
         }
       } else {
-        item.quantity = parseInt(item.quantity) + 1;
+        item.quantity = (parseFloat(item.quantity) + 1).toFixed(item.unit && item.unit !== 'pcs' ? 2 : 0);
         $(this).renderTable(cart);
       }
     };
 
     $.fn.qtDecrement = function (i) {
-      if (item.quantity > 1) {
+      if (parseFloat(item.quantity) > 0.01) {
         item = cart[i];
-        item.quantity = parseInt(item.quantity) - 1;
+        let q = parseFloat(item.quantity) - 1;
+        if (q < 0.01) q = (item.unit && item.unit !== 'pcs') ? 0.01 : 1;
+        item.quantity = q.toFixed(item.unit && item.unit !== 'pcs' ? 2 : 0);
         $(this).renderTable(cart);
       }
     };
@@ -680,6 +721,49 @@ if (auth == undefined) {
       }
     };
 
+    $("#previewBillButton").on("click", function () {
+      if (cart.length != 0) {
+        const transactionData = {
+          items: cart.map(item => ({
+            name: item.product_name,
+            quantity: item.quantity,
+            price: item.price,
+            market_price: item.market_price || item.price,
+            unit: item.unit || 'pcs'
+          })),
+          total: cart.reduce((sum, item) => sum + (item.quantity * item.price), 0),
+          payment_type: 'Cash',
+          paid: '',
+          change: '',
+          date: new Date().toISOString(),
+          orderNumber: 'N/A',
+          refNumber: 'N/A',
+          customer: 'Walk in customer',
+          cashier: 'Administrator',
+          discount: 0
+        };
+        currentBillData = transactionData;
+        const billContent = generateSinhalaBillContent(transactionData);
+        $("#billPreviewContent").text(billContent);
+        
+        // Show logo in preview if available
+        if (settings && settings.img) {
+          const logo = path.join(img_path, validator.unescape(settings.img));
+          if (checkFileExists(logo)) {
+            $("#billPreviewLogo").html(`<img style='max-width: 50px;' src='${logo}' />`);
+          } else {
+            $("#billPreviewLogo").html('');
+          }
+        } else {
+          $("#billPreviewLogo").html('');
+        }
+        
+        $("#sinhalaBillPreviewModal").modal('show');
+      } else {
+        notiflix.Report.warning("Oops!", "There is nothing to preview!", "Ok");
+      }
+    });
+
     $("#payButton").on("click", function () {
       if (cart.length != 0) {
         $("#paymentModel").modal("toggle");
@@ -704,13 +788,21 @@ if (auth == undefined) {
       let items = "";
       let payment = 0;
       paymentType = $('.list-group-item.active').data('payment-type');
-      cart.forEach((item) => {
-    items += `<tr><td>${DOMPurify.sanitize(item.product_name)}</td><td>${
-      DOMPurify.sanitize(item.quantity)
-    } </td><td class="text-right"> ${DOMPurify.sanitize(validator.unescape(settings.symbol))} ${moneyFormat(
-      DOMPurify.sanitize(Math.abs(item.price).toFixed(2)),
-    )} </td></tr>`;
-});
+      cart.forEach((item, index) => {
+        const qty = parseFloat(item.quantity || 0);
+        const our = parseFloat(item.price || 0);
+        const market = parseFloat(item.market_price || item.price || 0);
+        const subtotalLine = qty * our;
+        items += `<tr>
+              <td colspan="4"><strong>${DOMPurify.sanitize((index + 1).toString())}. ${DOMPurify.sanitize(item.product_name)}</strong></td>
+        </tr>`;
+        items += `<tr>
+          <td style="text-align:center;">${DOMPurify.sanitize(qty.toString())}</td>
+          <td style="text-align:center;">${DOMPurify.sanitize(market.toFixed(2))}</td>
+          <td style="text-align:center;">${DOMPurify.sanitize(our.toFixed(2))}</td>
+          <td style="text-align:center;">${DOMPurify.sanitize(subtotalLine.toFixed(2))}</td>
+        </tr>`;
+      });
 
       let currentTime = new Date(moment());
       let discount = $("#inputDiscount").val();
@@ -739,29 +831,32 @@ if (auth == undefined) {
         payment = `<tr>
                         <td>Paid</td>
                         <td>:</td>
-                        <td class="text-right">${validator.unescape(settings.symbol)} ${moneyFormat(
+                        <td> </td>
+                        <td class="text-right">${getCurrencySymbol()} ${moneyFormat(
                           Math.abs(paid).toFixed(2),
                         )}</td>
                     </tr>
                     <tr>
                         <td>Change</td>
                         <td>:</td>
-                        <td class="text-right">${validator.unescape(settings.symbol)} ${moneyFormat(
+                        <td> </td>
+                        <td class="text-right">${getCurrencySymbol()} ${moneyFormat(
                           Math.abs(change).toFixed(2),
                         )}</td>
                     </tr>
                     <tr>
                         <td>Method</td>
                         <td>:</td>
+                        <td> </td>
                         <td class="text-right">${type}</td>
                     </tr>`;
       }
 
       if (settings.charge_tax) {
         tax_row = `<tr>
-                    <td>VAT(${validator.unescape(settings.percentage)})% </td>
+                    <td>VAT(${getVATPercentage()})% </td>
                     <td>:</td>
-                    <td class="text-right">${validator.unescape(settings.symbol)} ${moneyFormat(
+                    <td class="text-right">${getCurrencySymbol()} ${moneyFormat(
                       parseFloat(totalVat).toFixed(2),
                     )}</td>
                 </tr>`;
@@ -790,11 +885,11 @@ if (auth == undefined) {
 
       logo = path.join(img_path, validator.unescape(settings.img));
 
-      receipt = `<div style="font-size: 10px">                            
+      receipt = `<div style="font-size: 12px">                            
         <p style="text-align: center;">
         ${
           checkFileExists(logo)
-            ? `<img style='max-width: 50px' src='${logo}' /><br>`
+            ? `<img style='max-width: 120px' src='${logo}' /><br>`
             : ``
         }
             <span style="font-size: 22px;">${validator.unescape(settings.store)}</span> <br>
@@ -808,32 +903,40 @@ if (auth == undefined) {
         <hr>
         <left>
             <p>
-            Order No : ${orderNumber} <br>
-            Ref No : ${refNumber == "" ? orderNumber : _.escape(refNumber)} <br>
-            Customer : ${
+            ඇණවුම් අංකය : ${orderNumber} <br>
+            යොමු අංකය : ${refNumber == "" ? orderNumber : _.escape(refNumber)} <br>
+            ගැණුම්කරු : ${
               customer == 0 || !customer ? "Walk in customer" : _.escape(customer.name)
             } <br>
-            Cashier : ${user.fullname} <br>
-            Date : ${date}<br>
+            කැෂියර් : ${user.fullname} <br>
+            දිනය: ${date}<br>
             </p>
 
         </left>
         <hr>
-        <table width="90%">
+        <table width="100%">
+                    <colgroup>
+                <col style="width: 30%;">
+                <col style="width: 30%;">
+                <col style="width: 30%;">
+                <col style="width: 30%;">
+              </colgroup>
             <thead>
             <tr>
-                <th>Item</th>
-                <th>Qty</th>
-                <th class="text-right">Price</th>
+                <th>ප්‍රමාණය</th>
+                <th>සා/මිල</th>
+                <th>අපේ මිල</th>
+                <th class="text-right">වටිනාකම</th>
             </tr>
             </thead>
             <tbody>
-             ${items}                
-            <tr><td colspan="3"><hr></td></tr>
+             ${items}
+            <tr><td colspan="4"><hr></td></tr>
             <tr>                        
-                <td><b>Subtotal</b></td>
+                <td><b>මුළු වටිනාකම</b></td>
                 <td>:</td>
-                <td class="text-right"><b>${validator.unescape(settings.symbol)}${moneyFormat(
+                <td> </td>
+                <td class="text-right"><b>${getCurrencySymbol()}${moneyFormat(
                   subTotal.toFixed(2),
                 )}</b></td>
             </tr>
@@ -842,7 +945,7 @@ if (auth == undefined) {
                 <td>:</td>
                 <td class="text-right">${
                   discount > 0
-                    ? validator.unescape(settings.symbol) +
+                    ? getCurrencySymbol() +
                       moneyFormat(parseFloat(discount).toFixed(2))
                     : ""
                 }</td>
@@ -851,10 +954,11 @@ if (auth == undefined) {
             <tr>
                 <td><h5>Total</h5></td>
                 <td><h5>:</h5></td>
+                <td> </td>
                 <td class="text-right">
-                    <h5>${validator.unescape(settings.symbol)} ${moneyFormat(
+                    <h5>${getCurrencySymbol()} ${moneyFormat(
                       parseFloat(orderTotal).toFixed(2),
-                    )}</h3>
+                    )}</h5>
                 </td>
             </tr>
             ${payment == 0 ? "" : payment}
@@ -911,6 +1015,28 @@ if (auth == undefined) {
         cache: false,
         processData: false,
         success: function (data) {
+          // Print Sinhala bill for 80mm thermal printer before clearing cart
+          const transactionData = {
+            items: cart.map(item => ({
+              name: item.product_name,
+              quantity: item.quantity,
+              price: item.price,
+              market_price: item.market_price || item.price,
+              unit: item.unit || 'pcs'
+            })),
+            total: orderTotal,
+            payment_type: type,
+            paid: paid,
+            change: change,
+            date: date,
+            orderNumber: orderNumber,
+            refNumber: refNumber,
+            customer: customer == 0 || !customer ? "Walk in customer" : customer.name,
+            cashier: user.fullname,
+            discount: parseFloat(discount) || 0
+          };
+          printSinhalaBill(transactionData);
+          
           cart = [];
           receipt = DOMPurify.sanitize(receipt,{ ALLOW_UNKNOWN_PROTOCOLS: true });
           $("#viewTransaction").html("");
@@ -922,7 +1048,6 @@ if (auth == undefined) {
           $("#dueModal").modal("hide");
           $("#paymentModel").modal("hide");
           $(this).getHoldOrders();
-          $(this).getCustomerOrders();
           $(this).renderTable(cart);
         },
 
@@ -945,7 +1070,6 @@ if (auth == undefined) {
     $.get(api + "on-hold", function (data) {
       holdOrderList = data;
       holdOrderlocation.empty();
-      // clearInterval(dotInterval);
       $(this).renderHoldOrders(holdOrderList, holdOrderlocation, 1);
     });
 
@@ -1129,14 +1253,7 @@ if (auth == undefined) {
       );
     };
 
-    $.fn.getCustomerOrders = function () {
-      $.get(api + "customer-orders", function (data) {
-        //clearInterval(dotInterval);
-        customerOrderList = data;
-        customerOrderLocation.empty();
-        $(this).renderHoldOrders(customerOrderList, customerOrderLocation, 2);
-      });
-    };
+    // Orders feature removed
 
     $("#saveCustomer").on("submit", function (e) {
       e.preventDefault();
@@ -1229,15 +1346,624 @@ if (auth == undefined) {
       }, 500);
     });
 
-    $("#viewCustomerOrders").on("click", function () {
-      setTimeout(function () {
-        $("#holdCustomerOrderInput").focus();
-      }, 500);
-    });
-
     $("#newProductModal").on("click", function () {
       $("#saveProduct").get(0).reset();
       $("#current_img").text("");
+      $("#product_benefit").val("");
+      updateUnitNotes();
+    });
+
+    $(document).on('change', '#unit', function(){
+      updateUnitNotes();
+    });
+
+    function updateUnitNotes(){
+      const u = $("#unit").val() || 'pcs';
+      const note = u === 'pcs' ? 'per pcs' : ('per ' + u);
+      $("#unit_note_market").text(note);
+      $("#unit_note_our").text(note);
+      $("#unit_note_price").text(note);
+    }
+
+    // Render unit buttons in popup based on base unit
+    function renderPopupUnitButtons(baseUnit){
+      const container = $("#popupUnitButtons");
+      container.empty();
+      let units = [];
+      if (baseUnit === 'kg' || baseUnit === 'g') {
+        units = ['g','kg'];
+      } else if (baseUnit === 'L' || baseUnit === 'ml') {
+        units = ['ml','L'];
+      } else {
+        units = [baseUnit];
+      }
+      units.forEach(function(u, idx){
+        const btn = $('<button>', {
+          type: 'button',
+          class: 'btn unit-btn ' + (idx === 0 ? 'btn-primary active' : 'btn-default'),
+          'data-unit': u,
+          text: u
+        });
+        container.append(btn);
+      });
+    }
+
+    // Helper function for translations with fallback
+    function getTranslation(key, fallback) {
+      if (typeof window.i18next !== 'undefined' && window.i18next.t) {
+        return window.i18next.t(key);
+      }
+      return fallback || key;
+    }
+
+    // Store current product for quantity popup
+    let currentProductForPopup = null;
+
+    // Handle quantity popup for uncountable products
+    $(document).on('click', '#confirmQuantity', function(){
+      const quantity = parseFloat($("#popupQuantity").val());
+      const selectedUnitBtn = $("#popupUnitButtons .unit-btn.active");
+      const selectedUnit = selectedUnitBtn.length ? selectedUnitBtn.data('unit') : (currentProductForPopup ? currentProductForPopup.unit : 'pcs');
+      
+      if (!quantity || quantity <= 0) {
+        Notiflix.Notify.Warning(getTranslation('quantityPopup.invalidQuantity', 'Please enter a valid quantity'));
+        return;
+      }
+
+      if (currentProductForPopup) {
+        // Convert quantity to product's base unit if needed
+        let finalQuantity = quantity;
+        let finalUnit = selectedUnit;
+        
+        // Convert to product's unit if different
+        if (selectedUnit !== currentProductForPopup.unit) {
+          if (selectedUnit === 'g' && currentProductForPopup.unit === 'kg') {
+            finalQuantity = quantity / 1000;
+            finalUnit = 'kg';
+          } else if (selectedUnit === 'kg' && currentProductForPopup.unit === 'g') {
+            finalQuantity = quantity * 1000;
+            finalUnit = 'g';
+          } else if (selectedUnit === 'ml' && currentProductForPopup.unit === 'L') {
+            finalQuantity = quantity / 1000;
+            finalUnit = 'L';
+          } else if (selectedUnit === 'L' && currentProductForPopup.unit === 'ml') {
+            finalQuantity = quantity * 1000;
+            finalUnit = 'ml';
+          }
+        }
+
+        // Check stock availability
+        if (finalQuantity > parseFloat(currentProductForPopup.quantity)) {
+          const message = getTranslation('quantityPopup.insufficientStock', 'Insufficient stock. Available: {{available}} {{unit}}')
+            .replace('{{available}}', currentProductForPopup.quantity)
+            .replace('{{unit}}', currentProductForPopup.unit);
+          Notiflix.Notify.Warning(message);
+          return;
+        }
+
+        // Add to cart with converted quantity
+        const cartItem = {
+          id: currentProductForPopup._id,
+          product_name: currentProductForPopup.name,
+          sku: currentProductForPopup.sku,
+          price: parseFloat(currentProductForPopup.price),
+          quantity: finalQuantity,
+          unit: finalUnit,
+          barcode: currentProductForPopup.barcode
+        };
+
+        cart.push(cartItem);
+        $("#quantityPopupModal").modal('hide');
+        $("#cartTable").renderTable(cart);
+        $("#cartTable").calculateCart();
+        
+        Notiflix.Notify.Success(getTranslation('quantityPopup.addedToCart', 'Added {{quantity}} {{unit}} to cart')
+          .replace('{{quantity}}', quantity)
+          .replace('{{unit}}', selectedUnit));
+      }
+    });
+
+    // Unit button selection
+    $(document).on('click', '#popupUnitButtons .unit-btn', function(){
+      $('#popupUnitButtons .unit-btn').removeClass('active btn-primary').addClass('btn-default');
+      $(this).addClass('active btn-primary').removeClass('btn-default');
+      $("#popupUnit").text($(this).data('unit'));
+      // Don't change the available unit - keep it as product's original unit
+    });
+
+    // Sinhala Bill Printing for 80mm Thermal Printer
+    function printSinhalaBill(transactionData) {
+      const billContent = generateSinhalaBillContent(transactionData);
+      printBill(billContent);
+    }
+
+    function generateSinhalaBillContent(data) {
+      const now = new Date();
+      const date = now.toLocaleDateString('en-GB');
+      const time = now.toLocaleTimeString('en-GB', { hour12: false });
+      
+      let bill = '';
+      
+      // Header - centered store title with settings
+      bill += '='.repeat(32) + '\n';
+      if (settings && settings.store) {
+        const storeName = validator.unescape(settings.store);
+        const padding = Math.max(0, Math.floor((32 - storeName.length) / 2));
+        bill += ' '.repeat(padding) + storeName + '\n';
+      } else {
+        bill += '        Store Name\n';
+      }
+      bill += '='.repeat(32) + '\n';
+      
+      // Address info - centered
+      if (settings && settings.address_one) {
+        const addr1 = validator.unescape(settings.address_one);
+        const p1 = Math.max(0, Math.floor((32 - addr1.length) / 2));
+        bill += ' '.repeat(p1) + addr1 + '\n';
+      }
+      if (settings && settings.address_two) {
+        const addr2 = validator.unescape(settings.address_two);
+        const p2 = Math.max(0, Math.floor((32 - addr2.length) / 2));
+        bill += ' '.repeat(p2) + addr2 + '\n';
+      }
+      if (settings && settings.contact) {
+        const contact = `Tel: ${validator.unescape(settings.contact)}`;
+        const p3 = Math.max(0, Math.floor((32 - contact.length) / 2));
+        bill += ' '.repeat(p3) + contact + '\n';
+      }
+      if (settings && settings.tax) {
+        const tax = `Vat No: ${validator.unescape(settings.tax)}`;
+        const p4 = Math.max(0, Math.floor((32 - tax.length) / 2));
+        bill += ' '.repeat(p4) + tax + '\n';
+      }
+      
+      // Date/time and payment line - centered
+      const dateTime = `දිනය: ${date}    කාලය: ${time}`;
+      const p5 = Math.max(0, Math.floor((32 - dateTime.length) / 2));
+      bill += ' '.repeat(p5) + dateTime + '\n';
+      const payment = 'පාරිභෝ- CASH';
+      const p6 = Math.max(0, Math.floor((32 - payment.length) / 2));
+      bill += ' '.repeat(p6) + payment + '\n';
+      bill += '-'.repeat(32) + '\n';
+      
+      // Table header
+      bill += 'ප්‍රමාණය  සා/මිල  අපේ මිල  වටිනාකම\n';
+      bill += '-'.repeat(32) + '\n';
+      
+      // Items rows with fixed-width numeric columns
+      let totalMarketPrice = 0;
+      let totalOurPrice = 0;
+      let totalBenefit = 0;
+      
+      data.items.forEach((item, index) => {
+        const itemNumber = `${index + 1})`;
+        const quantity = item.quantity;
+        const marketPrice = parseFloat(item.market_price);
+        const ourPrice = parseFloat(item.price);
+        const subtotal = quantity * ourPrice;
+        const benefit = quantity * (marketPrice - ourPrice);
+        
+        totalMarketPrice += quantity * marketPrice;
+        totalOurPrice += subtotal;
+        totalBenefit += benefit;
+        
+        bill += `${itemNumber} ${item.name}\n`;
+        const qtyStr = quantity.toString();
+        const marketStr = marketPrice.toFixed(2);
+        const ourStr = ourPrice.toFixed(2);
+        const subtotalStr = subtotal.toFixed(2);
+        bill += `${qtyStr.padStart(8)} ${marketStr.padStart(8)} ${ourStr.padStart(8)} ${subtotalStr.padStart(10)}\n`;
+      });
+      
+      bill += '-'.repeat(32) + '\n';
+      
+      // Totals - left aligned
+      const totalMarketStr = `සම්පූර්ණ සාමාන්‍ය වෙළඳපොල මිල: ${totalMarketPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      const totalOurStr = `සම්පූර්ණ අපගේ මිල: ${totalOurPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      const totalBenefitStr = `සම්පූර්ණ පාරිභෝගික ප්‍රයෝජනය: ${totalBenefit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      bill += totalMarketStr + '\n';
+      bill += totalOurStr + '\n';
+      bill += totalBenefitStr + '\n';
+      bill += '='.repeat(32) + '\n';
+      
+      // Footer (centered if available)
+      if (settings && settings.footer) {
+        const footer = validator.unescape(settings.footer);
+        const p7 = Math.max(0, Math.floor((32 - footer.length) / 2));
+        bill += ' '.repeat(p7) + footer + '\n';
+      } else {
+        bill += '        ස්තූතියි!\n';
+      }
+      bill += '='.repeat(32) + '\n';
+      
+      return bill;
+    }
+
+    function printBill(content) {
+      // Create a new window for printing
+      const printWindow = window.open('', '_blank', 'width=400,height=600');
+      
+      // Get logo path if available
+      let logoHtml = '';
+      if (settings && settings.img) {
+        const logo = path.join(img_path, validator.unescape(settings.img));
+        if (checkFileExists(logo)) {
+          logoHtml = `<img style='max-width: 50px; display: block; margin: 0 auto;' src='${logo}' /><br>`;
+        }
+      }
+      
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Bill Print</title>
+            <style>
+              @media print {
+                @page { 
+                  size: 80mm auto; 
+                  margin: 0;
+                }
+                body { 
+                  font-family: 'Courier New', monospace; 
+                  font-size: 14px; 
+                  font-weight: bold;
+                  line-height: 1.3;
+                  margin: 0;
+                  padding: 8px;
+                  width: 80mm;
+                }
+                .bill-content {
+                  white-space: pre-line;
+                  font-size: 13px;
+                  font-weight: bold;
+                }
+                .logo {
+                  text-align: center;
+                  margin-bottom: 10px;
+                }
+              }
+              body { 
+                font-family: 'Courier New', monospace; 
+                font-size: 14px; 
+                font-weight: bold;
+                line-height: 1.3;
+                margin: 0;
+                padding: 8px;
+                width: 80mm;
+              }
+              .bill-content {
+                white-space: pre-line;
+                font-size: 13px;
+                font-weight: bold;
+              }
+              .logo {
+                text-align: center;
+                margin-bottom: 10px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="logo">${logoHtml}</div>
+            <div class="bill-content">${content}</div>
+            <script>
+              window.onload = function() {
+                window.print();
+                setTimeout(function() {
+                  window.close();
+                }, 1000);
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+
+    // Store current bill data for preview
+    let currentBillData = null;
+
+    // Manual Sinhala bill printing from order modal
+    window.printSinhalaBillFromModal = function() {
+      const transactionData = extractTransactionDataFromModal();
+      if (transactionData) {
+        printSinhalaBill(transactionData);
+      }
+    };
+
+    // Preview Sinhala bill from order modal
+    window.previewSinhalaBillFromModal = function() {
+      const transactionData = extractTransactionDataFromModal();
+      if (transactionData) {
+        currentBillData = transactionData;
+        const billContent = generateSinhalaBillContent(transactionData);
+        $("#billPreviewContent").text(billContent);
+        
+        // Show logo in preview if available
+        if (settings && settings.img) {
+          const logo = path.join(img_path, validator.unescape(settings.img));
+          if (checkFileExists(logo)) {
+            $("#billPreviewLogo").html(`<img style='max-width: 50px;' src='${logo}' />`);
+          } else {
+            $("#billPreviewLogo").html('');
+          }
+        } else {
+          $("#billPreviewLogo").html('');
+        }
+        
+        $("#sinhalaBillPreviewModal").modal('show');
+      }
+    };
+
+    // Print from preview
+    window.printFromPreview = function() {
+      if (currentBillData) {
+        printSinhalaBill(currentBillData);
+        $("#sinhalaBillPreviewModal").modal('hide');
+      }
+    };
+
+    // Extract transaction data from modal
+    function extractTransactionDataFromModal() {
+      // Get the current transaction data from the modal
+      const transactionHtml = $("#viewTransaction").html();
+      
+      // Extract items from the HTML table
+      const items = [];
+      $("#viewTransaction table tbody tr").each(function() {
+        const cells = $(this).find('td');
+        if (cells.length >= 3) {
+          const name = $(cells[0]).text().trim();
+          const quantity = parseFloat($(cells[1]).text().trim());
+          const priceText = $(cells[2]).text().trim();
+          const price = parseFloat(priceText.replace(/[^\d.-]/g, ''));
+          
+          if (name && !isNaN(quantity) && !isNaN(price)) {
+            items.push({
+              name: name,
+              quantity: quantity,
+              price: price,
+              market_price: price, // Use same price as market price if not available
+              unit: 'pcs'
+            });
+          }
+        }
+      });
+      
+      if (items.length > 0) {
+        return {
+          items: items,
+          total: items.reduce((sum, item) => sum + (item.quantity * item.price), 0),
+          payment_type: 'Cash',
+          paid: '',
+          change: '',
+          date: new Date().toISOString(),
+          orderNumber: 'N/A',
+          refNumber: 'N/A',
+          customer: 'Walk in customer',
+          cashier: 'Administrator',
+          discount: 0
+        };
+      } else {
+        Notiflix.Notify.Warning('No items found to print');
+        return null;
+      }
+    }
+    $("#suppliersBtn").on("click", function () {
+      $("#suppliersModal").modal("show");
+      loadSuppliers();
+    });
+
+    $("#newSupplierBtn").on("click", function () {
+      $("#saveSupplier").get(0).reset();
+    });
+
+    $("#saveSupplier").submit(function (e) {
+      e.preventDefault();
+      let formData = $(this).serializeArray().reduce(function (obj, item) {
+        obj[item.name] = item.value;
+        return obj;
+      }, {});
+
+      $.ajax({
+        url: api + "suppliers/supplier",
+        method: "POST",
+        contentType: "application/json; charset=utf-8",
+        data: JSON.stringify(formData),
+        success: function (data) {
+          $("#newSupplierModal").modal("hide");
+          notiflix.Report.success(
+            i18next.t('supplier.added_title', 'Supplier added!'),
+            i18next.t('supplier.added_success', 'Supplier added successfully!'),
+            "Ok",
+          );
+          loadSuppliers();
+        },
+        error: function () {
+          $("#newSupplierModal").modal("hide");
+          notiflix.Report.failure(
+            i18next.t('common.error', 'Error'),
+            i18next.t('supplier.added_error', 'Something went wrong please try again'),
+            "Ok",
+          );
+        },
+      });
+    });
+
+    // Delegate supplier action handlers to survive DataTable redraws
+    $(document).off('click', '.supplier-settle').on('click', '.supplier-settle', function(){
+      const idx = $(this).data('index');
+      const s = (window._suppliers||[])[idx];
+      if (!s) return;
+      const id = s._id || s.supplier_id;
+      $("#settle_supplier_id").val(id);
+      $.get(api + 'suppliers/supplier/' + id, function(full){
+        const due = parseFloat((full && full.amount_due) || s.amount_due || 0);
+        const paid = parseFloat((full && full.amount_paid) || s.amount_paid || 0);
+        const remaining = (due - paid);
+        $("#settle_base_remaining").val(remaining.toFixed(2));
+        $("#settle_remaining").text(`${getCurrencySymbol()}${moneyFormat(remaining.toFixed(2))}`);
+        $("#settle_total_input").val('');
+        $("#settle_total_date").val(((full && full.payment_date) || s.payment_date || '').substring(0,10));
+        $("#settle_status").val('Partially Paid');
+        const history = (full && full.history) || [];
+        let h = "";
+        history.forEach(function(ent){
+          const amt = parseFloat(ent.amount||0);
+          h += `\n<tr><td>${getCurrencySymbol()}${moneyFormat(amt.toFixed(2))}</td><td>${_.escape((ent.date||'').substring(0,10))}</td></tr>`;
+        });
+        $("#supplier_history_body").html(h);
+        $("#settleSupplierModal").modal('show');
+      });
+    });
+
+    $(document).off('click', '.supplier-view').on('click', '.supplier-view', function(){
+      const idx = $(this).data('index');
+      const s = (window._suppliers||[])[idx];
+      if (!s) return;
+      notiflix.Report.info(
+        i18next.t('supplier.details', 'Supplier details'),
+        `${_.escape(s.name)}<br>${_.escape(s.contact_info || '')}<br>${i18next.t('supplier.amount_due','Amount Due')}: ${getCurrencySymbol()}${moneyFormat((s.amount_due||0).toFixed(2))}<br>${i18next.t('supplier.amount_paid','Amount Paid')}: ${getCurrencySymbol()}${moneyFormat((s.amount_paid||0).toFixed(2))}`,
+        'Ok'
+      );
+    });
+
+    function renderSupplierList(list){
+      let html = "";
+      list.forEach(function (s, index) {
+        const due = parseFloat(s.amount_due || 0);
+        const paid = parseFloat(s.amount_paid || 0);
+        const status = s.payment_status || (paid > 0 && paid < due ? 'Partially Paid' : (due > 0 && paid === 0 ? 'Need to Pay' : ''));
+        const remaining = Math.max(0, (due - paid));
+        const statusLabel = (status === 'Partially Paid' && remaining > 0)
+          ? `${_.escape(status)} (${getCurrencySymbol()}${moneyFormat(remaining.toFixed(2))} ${i18next.t('supplier.remaining','remaining')})`
+          : _.escape(status);
+        html += `\n<tr>\n  <td>${_.escape(s.name || '')}</td>\n  <td>${statusLabel}</td>\n  <td>${_.escape(s.payment_date || '')}</td>\n  <td>${getCurrencySymbol()}${moneyFormat((due||0).toFixed(2))} / ${getCurrencySymbol()}${moneyFormat((paid||0).toFixed(2))}</td>\n  <td class="nobr"><span class="btn-group"><button data-index="${index}" class="btn btn-info btn-sm supplier-settle"><i class="fa fa-check"></i></button><button data-index="${index}" class="btn btn-warning btn-sm supplier-view"><i class="fa fa-eye"></i></button></span></td>\n</tr>`;
+      });
+      $("#supplier_list").html(html);
+    }
+
+    function loadSuppliers(){
+      $.get(api + "suppliers/all", function (data) {
+        window._suppliers = data || [];
+        renderSupplierList(window._suppliers);
+        triggerSupplierNotifications(window._suppliers);
+        if ($.fn.DataTable.isDataTable('#supplierList')) {
+          $("#supplierList").DataTable().destroy();
+        }
+        $("#supplierList").DataTable({
+          order: [[0, "asc"]],
+          autoWidth: false,
+        });
+
+        // Bind search box to DataTable search
+        setTimeout(function(){
+          const dt = $("#supplierList").DataTable();
+          $("#supplierSearch").off('keyup change').on('keyup change', function(){
+            dt.search(this.value).draw();
+          });
+        }, 0);
+      });
+    }
+
+    function triggerSupplierNotifications(list){
+      (list||[]).forEach(function(s){
+        const due = parseFloat(s.amount_due || 0);
+        const paid = parseFloat(s.amount_paid || 0);
+        const date = s.payment_date || '';
+        if (due > paid && paid > 0){
+          notiflix.Notify.warning(i18next.t('supplier.payment_partially_paid', { name: s.name, amount: moneyFormat((due-paid).toFixed(2)), date: date }));
+        } else if (due > 0 && paid === 0){
+          notiflix.Notify.failure(i18next.t('supplier.payment_due', { name: s.name, amount: moneyFormat(due.toFixed(2)), date: date }));
+        }
+      });
+    }
+
+    // removed addSettleRow helper; using single input only
+
+    $("#addSettleRow").on('click', function(){
+      // removed table rows feature
+    });
+
+    $("#settleSupplierForm").on("submit", function(e){
+      e.preventDefault();
+      const id = $("#settle_supplier_id").val();
+      let totalPay = parseFloat($("#settle_total_input").val()||0);
+      if (isNaN(totalPay) || totalPay <= 0){
+        notiflix.Report.warning(i18next.t('messages.warning','Warning'), i18next.t('supplier.amount_to_pay','Amount to pay') + ' ?', 'Ok');
+        return;
+      }
+      const entryDate = $("#settle_total_date").val() || new Date().toISOString().substring(0,10);
+      const entries = [{ amount: totalPay, date: entryDate, note: 'settlement' }];
+      const status = $("#settle_status").val();
+      const current = (window._suppliers||[]).find(s => (s._id||s.supplier_id)==id) || {};
+      const newPaid = parseFloat(current.amount_paid||0) + totalPay;
+      const due = parseFloat(current.amount_due||0);
+      if (newPaid > due){
+        notiflix.Report.warning(i18next.t('messages.warning','Warning'), i18next.t('supplier.overpay','You are paying more than due amount'), 'Ok');
+        return;
+      }
+      const finalStatus = status === 'Paid' || newPaid >= due ? 'Paid' : 'Partially Paid';
+
+      const body = {
+        supplier_id: isNaN(Number(id)) ? id : Number(id),
+        amount_paid: newPaid,
+        payment_status: finalStatus,
+        payment_date: current.payment_date || '',
+      };
+
+      $.ajax({
+        url: api + 'suppliers/supplier',
+        method: 'PUT',
+        contentType: 'application/json; charset=utf-8',
+        data: JSON.stringify(body),
+        success: function(){
+          // append all entries, then refresh modal + list
+          function postHistorySequential(index){
+            if (index >= entries.length){
+              // done posting all
+              $.get(api + 'suppliers/supplier/' + (isNaN(Number(id)) ? id : Number(id)), function(updated){
+                const dueU = parseFloat(updated.amount_due||0);
+                const paidU = parseFloat(updated.amount_paid||0);
+                const remainingU = Math.max(0, dueU - paidU);
+                $("#settle_base_remaining").val(remainingU.toFixed(2));
+                $("#settle_remaining").text(`${getCurrencySymbol()}${moneyFormat(remainingU.toFixed(2))}`);
+
+                const final = paidU >= dueU ? 'Paid' : 'Partially Paid';
+                $("#settle_status").val(final);
+
+                let h = "";
+                (updated.history||[]).forEach(function(ent){
+                  const amt = parseFloat(ent.amount||0);
+                  h += `\n<tr><td>${getCurrencySymbol()}${moneyFormat(amt.toFixed(2))}</td><td>${_.escape((ent.date||'').substring(0,10))}</td></tr>`;
+                });
+                $("#supplier_history_body").html(h);
+
+                loadSuppliers();
+                notiflix.Report.success(i18next.t('messages.success','Success'), i18next.t('messages.operationSuccess','Operation completed successfully'), 'Ok');
+              });
+              return;
+            }
+            const ent = entries[index];
+            $.ajax({
+              url: api + 'suppliers/supplier/' + (isNaN(Number(id)) ? id : Number(id)) + '/history',
+              method: 'POST',
+              contentType: 'application/json; charset=utf-8',
+              data: JSON.stringify(ent),
+              complete: function(){
+                // after each post, append immediate row in UI for feedback
+                const amt = parseFloat(ent.amount||0);
+                $("#supplier_history_body").append(`\n<tr><td>${getCurrencySymbol()}${moneyFormat(amt.toFixed(2))}</td><td>${_.escape((ent.date||'').substring(0,10))}</td></tr>`);
+                postHistorySequential(index+1);
+              },
+            });
+          }
+
+          postHistorySequential(0);
+          
+        },
+        error: function(){
+          notiflix.Report.failure(i18next.t('messages.error','Error'), i18next.t('messages.operationFailed','Operation failed'), 'Ok');
+        }
+      });
     });
 
     $("#saveProduct").submit(function (e) {
@@ -1245,6 +1971,16 @@ if (auth == undefined) {
 
       $(this).attr("action", api + "inventory/product");
       $(this).attr("method", "POST");
+
+      // auto-calc price and benefit before submit
+      const market = parseFloat($("#product_market_price").val()||0);
+      const our = parseFloat($("#product_our_price").val()||0);
+      if (!isNaN(our) && our>0) {
+        $("#product_price").val(our.toFixed(2));
+      }
+      if (!isNaN(market) && !isNaN(our)) {
+        $("#product_benefit").val((market-our).toFixed(2));
+      }
 
       $(this).ajaxSubmit({
         contentType: "application/json",
@@ -1614,7 +2350,7 @@ if (auth == undefined) {
             <td><img style="max-height: 50px; max-width: 50px; border: 1px solid #ddd;" src="${product_img}" id="product_img"></td>
             <td>${product.name}
             ${product.expiryAlert}</td>
-            <td>${validator.unescape(settings.symbol)}${product.price}</td>
+            <td>${getCurrencySymbol()}${product.price}</td>
             <td>${product.stock == 1 ? product.quantity : "N/A"}
             ${product.stockAlert}
             </td>
@@ -1993,16 +2729,16 @@ function loadTransactions() {
                                   "DD-MMM-YYYY HH:mm:ss",
                                 )}</td>
                                 <td>${
-                                  validator.unescape(settings.symbol) + moneyFormat(trans.total)
+                                  getCurrencySymbol() + moneyFormat(trans.total)
                                 }</td>
                                 <td>${
                                   trans.paid == ""
                                     ? ""
-                                    : validator.unescape(settings.symbol) + moneyFormat(trans.paid)
+                                    : getCurrencySymbol() + moneyFormat(trans.paid)
                                 }</td>
                                 <td>${
                                   trans.change
-                                    ? validator.unescape(settings.symbol) +
+                                    ? getCurrencySymbol() +
                                       moneyFormat(
                                         Math.abs(trans.change).toFixed(2),
                                       )
@@ -2026,7 +2762,7 @@ function loadTransactions() {
 
         if (counter == transactions.length) {
           $("#total_sales #counter").text(
-            validator.unescape(settings.symbol) + moneyFormat(parseFloat(sales).toFixed(2)),
+            getCurrencySymbol() + moneyFormat(parseFloat(sales).toFixed(2)),
           );
           $("#total_transactions #counter").text(transact);
 
@@ -2119,14 +2855,12 @@ function loadSoldProducts() {
             <td>${item.product}</td>
             <td>${item.qty}</td>
             <td>${
-              product[0].stock == 1
-                ? product.length > 0
-                  ? product[0].quantity
-                  : ""
+              product.length > 0 && product[0].stock == 1
+                ? product[0].quantity
                 : "N/A"
             }</td>
             <td>${
-              validator.unescape(settings.symbol) +
+              getCurrencySymbol() +
               moneyFormat((item.qty * parseFloat(item.price)).toFixed(2))
             }</td>
             </tr>`;
@@ -2148,7 +2882,7 @@ function userFilter(users) {
       return usr._id == user;
     });
 
-    $("#users").append(`<option value="${user}">${u[0].fullname}</option>`);
+    $("#users").append(`<option value="${user}">${u.length > 0 ? u[0].fullname : 'Unknown User'}</option>`);
   });
 }
 
@@ -2181,7 +2915,7 @@ $.fn.viewTransaction = function (index) {
   products.forEach((item) => {
     items += `<tr><td>${item.product_name}</td><td>${
       item.quantity
-    } </td><td class="text-right"> ${validator.unescape(settings.symbol)} ${moneyFormat(
+    } </td><td class="text-right"> ${getCurrencySymbol()} ${moneyFormat(
       Math.abs(item.price).toFixed(2),
     )} </td></tr>`;
   });
@@ -2193,14 +2927,14 @@ $.fn.viewTransaction = function (index) {
     payment = `<tr>
                     <td>Paid</td>
                     <td>:</td>
-                    <td class="text-right">${validator.unescape(settings.symbol)} ${moneyFormat(
+                    <td class="text-right">${getCurrencySymbol()} ${moneyFormat(
                       Math.abs(allTransactions[index].paid).toFixed(2),
                     )}</td>
                 </tr>
                 <tr>
                     <td>Change</td>
                     <td>:</td>
-                    <td class="text-right">${validator.unescape(settings.symbol)} ${moneyFormat(
+                    <td class="text-right">${getCurrencySymbol()} ${moneyFormat(
                       Math.abs(allTransactions[index].change).toFixed(2),
                     )}</td>
                 </tr>
@@ -2213,9 +2947,9 @@ $.fn.viewTransaction = function (index) {
 
   if (settings.charge_tax) {
     tax_row = `<tr>
-                <td>Vat(${validator.unescape(settings.percentage)})% </td>
+                <td>Vat(${getVATPercentage()})% </td>
                 <td>:</td>
-                <td class="text-right">${validator.unescape(settings.symbol)}${parseFloat(
+                <td class="text-right">${getCurrencySymbol()}${parseFloat(
                   allTransactions[index].tax,
                 ).toFixed(2)}</td>
             </tr>`;
@@ -2223,7 +2957,7 @@ $.fn.viewTransaction = function (index) {
 
     logo = path.join(img_path, validator.unescape(settings.img));
       
-      receipt = `<div style="font-size: 10px">                            
+      receipt = `<div style="font-size: 12px">                            
         <p style="text-align: center;">
         ${
           checkFileExists(logo)
@@ -2241,15 +2975,15 @@ $.fn.viewTransaction = function (index) {
     <hr>
     <left>
         <p>
-        Invoice : ${orderNumber} <br>
-        Ref No : ${refNumber} <br>
-        Customer : ${
+        ඉන්වොයිස් : ${orderNumber} <br>
+        යොමු අංකය : ${refNumber} <br>
+        ගැණුම්කරු : ${
           allTransactions[index].customer == 0 || !allTransactions[index].customer
             ? "Walk in Customer"
             : allTransactions[index].customer.name
         } <br>
-        Cashier : ${allTransactions[index].user} <br>
-        Date : ${moment(allTransactions[index].date).format(
+        කැෂියර් : ${allTransactions[index].user} <br>
+        දිනය : ${moment(allTransactions[index].date).format(
           "DD MMM YYYY HH:mm:ss",
         )}<br>
         </p>
@@ -2259,18 +2993,18 @@ $.fn.viewTransaction = function (index) {
     <table width="90%">
         <thead>
         <tr>
-            <th>Item</th>
-            <th>Qty</th>
-            <th class="text-right">Price</th>
+            <th>අයිතම</th>
+            <th>ප්‍රමාණය</th>
+            <th class="text-right">මිල</th>
         </tr>
         </thead>
         <tbody>
         ${items}                
         <tr><td colspan="3"><hr></td></tr>
         <tr>                        
-            <td><b>Subtotal</b></td>
+            <td><b>මුළු වටිනාකම</b></td>
             <td>:</td>
-            <td class="text-right"><b>${validator.unescape(settings.symbol)}${moneyFormat(
+            <td class="text-right"><b>${getCurrencySymbol()}${moneyFormat(
               allTransactions[index].subtotal,
             )}</b></td>
         </tr>
@@ -2279,7 +3013,7 @@ $.fn.viewTransaction = function (index) {
             <td>:</td>
             <td class="text-right">${
               discount > 0
-                ? validator.unescape(settings.symbol) +
+                ? getCurrencySymbol() +
                   moneyFormat(
                     parseFloat(allTransactions[index].discount).toFixed(2),
                   )
@@ -2290,10 +3024,10 @@ $.fn.viewTransaction = function (index) {
         ${tax_row}
     
         <tr>
-            <td><h5>Total</h5></td>
+            <td><h5>මුළු</h5></td>
             <td><h5>:</h5></td>
             <td class="text-right">
-                <h5>${validator.unescape(settings.symbol)}${moneyFormat(
+                <h5>${getCurrencySymbol()}${moneyFormat(
                   allTransactions[index].total,
                 )}</h5>
             </td>

@@ -92,6 +92,9 @@
     "barcode": "බාර්කෝඩ්",
     "category": "ප්‍රවර්ගය",
     "price": "මිල",
+    "marketPrice": "සාමාන්‍ය වෙළඳපොල මිල",
+    "ourPrice": "අපගේ මිල",
+    "benefit": "පාරිභෝගික ප්‍රයෝජනය",
     "stock": "ඉඟි",
     "minStock": "අවම ඉඟි",
     "expiryDate": "කල් ඉකුත් දිනය",
@@ -132,6 +135,33 @@
     "customerDeleted": "පාරිභෝගිකයා සාර්ථකව මකන ලදී",
     "customerOrders": "පාරිභෝගික ඇණවුම්",
     "searchByCustomer": "පාරිභෝගික නම මගින් ඇණවුම සොයන්න"
+  },
+  "supplier": {
+    "suppliers": "සැපයුම්කරුවන්",
+    "add": "සැපයුම්කරුවෙක් එක් කරන්න",
+    "save": "සුරකින්න",
+    "name": "සැපයුම්කරුවාගේ නාමය",
+    "contact_info": "සම්බන්ධතා තොරතුරු",
+    "payment_status": "ගෙවීම් තත්ත්වය",
+    "payment_date": "ගෙවීම් දිනය",
+    "amounts": "බැකි මුදල / ගෙවා ඇති මුදල",
+    "amount_due": "ගෙවිය යුතු මුදල",
+    "amount_paid": "ගෙවා ඇති මුදල",
+    "details": "සැපයුම්කරුවාගේ විස්තර",
+    "added_title": "සැපයුම්කරුවා එක් කළා!",
+    "added_success": "සැපයුම්කරුවා සාර්ථකව එක් කරන ලදි!",
+    "added_error": "දෝෂයකි. කරුණාකර නැවත උත්සාහ කරන්න",
+    "payment_due": "{{name}} ගෙවිය යුතු මුදල: {{amount}} {{date}} දිනට",
+    "payment_partially_paid": "{{name}} කොටස් වශයෙන් ගෙවා ඇත. ඉතිරි: {{amount}} {{date}} දිනට",
+    "settle_payment": "ගෙවීම නිමා කරන්න",
+    "partially_paid": "කොටස් වශයෙන් ගෙවා ඇත",
+    "paid_full": "සම්පූර්ණයෙන් ගෙවා ඇත",
+    "remaining": "ඉතිරි",
+    "search": "සැපයුම්කරුවන් සොයන්න",
+    "remaining_to_pay": "ඉතිරි ගෙවිය යුතු මුදල",
+    "overpay": "ඔබ ගෙවිය යුතු මුදලට වඩා වැඩි මුදලක් ගෙවයි",
+    "amount_to_pay": "ගෙවිය යුතු මුදල",
+    "payment_history": "ගෙවීම් ඉතිහාසය"
   },
   "transactions": {
     "title": "ගනුදෙනු",
@@ -247,6 +277,24 @@
   "currency": {
     "symbol": "රු.",
     "format": "{{amount}} {{symbol}}"
+  },
+  "units": {
+    "pcs": "කෑලි",
+    "g": "ග්‍රෑම්",
+    "kg": "කිලෝග්‍රෑම්", 
+    "ml": "මිලිලීටර්",
+    "L": "ලීටර්"
+  },
+  "quantityPopup": {
+    "title": "ප්‍රමාණය ඇතුළත් කරන්න",
+    "quantity": "ප්‍රමාණය",
+    "unit": "ඒකකය",
+    "available": "ලබා ගත හැකි",
+    "cancel": "අවලංගු කරන්න",
+    "addToCart": "ගැලරියට එකතු කරන්න",
+    "invalidQuantity": "කරුණාකර වලංගු ප්‍රමාණයක් ඇතුළත් කරන්න",
+    "insufficientStock": "අස්ථාවර ගබඩාව. ලබා ගත හැකි: {{available}} {{unit}}",
+    "addedToCart": "{{quantity}} {{unit}} ගැලරියට එකතු කරන ලදී"
   },
   "dateTime": {
     "format": "DD/MM/YYYY",

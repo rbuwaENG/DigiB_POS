@@ -81,6 +81,27 @@ ipcMain.on("restart-app", () => {
     autoUpdater.quitAndInstall();
 });
 
+
+
+ipcMain.on('print-bill', (event, billHTML) => {
+    // Create hidden window for printing
+    const printWindow = new BrowserWindow({ show: false });
+
+    printWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(billHTML));
+
+    printWindow.webContents.on('did-finish-load', () => {
+        printWindow.webContents.print({
+            silent: true,
+            printBackground: true,
+            deviceName: 'Canon LBP6030/6040/6018L'
+        }, (success, errorType) => {
+            if (!success) console.log('Print failed:', errorType);
+            printWindow.close();
+        });
+    });
+});
+
+
 //Context menu
 contextMenu({
     prepend: (params, browserWindow) => [

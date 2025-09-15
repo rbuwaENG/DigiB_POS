@@ -162,11 +162,15 @@ app.post("/product", function (req, res) {
         barcode: parseInt(validator.escape(req.body.barcode)),
         expirationDate: validator.escape(req.body.expirationDate),
         price: validator.escape(req.body.price),
+        market_price: validator.escape(req.body.market_price || ''),
+        our_price: validator.escape(req.body.our_price || ''),
+        benefit: validator.escape(req.body.benefit || ''),
         category: validator.escape(req.body.category),
         quantity:
             validator.escape(req.body.quantity) == ""
                 ? 0
                 : validator.escape(req.body.quantity),
+        unit: validator.escape(req.body.unit || 'pcs'),
         name: validator.escape(req.body.name),
         stock: req.body.stock === "on" ? 0 : 1,
         minStock: validator.escape(req.body.minStock),
@@ -279,9 +283,12 @@ app.decrementInventory = function (products) {
                 if (!product || !product.quantity) {
                     callback();
                 } else {
-                    let updatedQuantity =
-                        parseInt(product.quantity) -
-                        parseInt(transactionProduct.quantity);
+                    let currentQty = parseFloat(product.quantity);
+                    let deduct = parseFloat(transactionProduct.quantity);
+                    if (isNaN(currentQty)) currentQty = 0;
+                    if (isNaN(deduct)) deduct = 0;
+                    let updatedQuantity = currentQty - deduct;
+                    if (updatedQuantity < 0) updatedQuantity = 0;
 
                     inventoryDB.update(
                         {

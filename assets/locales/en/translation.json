@@ -92,6 +92,9 @@
     "barcode": "Barcode",
     "category": "Category",
     "price": "Price",
+    "marketPrice": "Market Price",
+    "ourPrice": "Our Price",
+    "benefit": "Customer Benefit",
     "stock": "Stock",
     "minStock": "Minimum Stock",
     "expiryDate": "Expiry Date",
@@ -175,6 +178,33 @@
     "searchByReference": "Search order by reference",
     "pleaseWait": "Please wait"
   },
+  "supplier": {
+    "suppliers": "Suppliers",
+    "add": "Add Supplier",
+    "save": "Save",
+    "name": "Supplier Name",
+    "contact_info": "Contact Info",
+    "payment_status": "Payment Status",
+    "payment_date": "Payment Date",
+    "amounts": "Amount Due / Paid",
+    "amount_due": "Amount Due",
+    "amount_paid": "Amount Paid",
+    "details": "Supplier details",
+    "added_title": "Supplier added!",
+    "added_success": "Supplier added successfully!",
+    "added_error": "Something went wrong please try again",
+    "payment_due": "{{name}} payment due: {{amount}} on {{date}}",
+    "payment_partially_paid": "{{name}} partially paid. Remaining: {{amount}} due on {{date}}",
+    "settle_payment": "Settle Payment",
+    "partially_paid": "Partially Paid",
+    "paid_full": "Paid",
+    "remaining": "remaining",
+    "search": "Search suppliers",
+    "remaining_to_pay": "Remaining to pay",
+    "overpay": "You are paying more than due amount",
+    "amount_to_pay": "Amount to pay",
+    "payment_history": "Payment History"
+  },
   "users": {
     "title": "Users",
     "fullName": "Name",
@@ -247,6 +277,24 @@
   "currency": {
     "symbol": "$",
     "format": "{{amount}} {{symbol}}"
+  },
+  "units": {
+    "pcs": "Pieces",
+    "g": "Grams",
+    "kg": "Kilograms", 
+    "ml": "Milliliters",
+    "L": "Liters"
+  },
+  "quantityPopup": {
+    "title": "Enter Quantity",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "available": "Available",
+    "cancel": "Cancel",
+    "addToCart": "Add to Cart",
+    "invalidQuantity": "Please enter a valid quantity",
+    "insufficientStock": "Insufficient stock. Available: {{available}} {{unit}}",
+    "addedToCart": "Added {{quantity}} {{unit}} to cart"
   },
   "dateTime": {
     "format": "DD/MM/YYYY",
